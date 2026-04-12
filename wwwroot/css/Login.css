@@ -1,7 +1,8 @@
-﻿/* Optimized Variables - Matches your Landing Page Green */
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Syncopate:wght@700&display=swap');
+
 :root {
     --bg-color: #101311;
-    --fit-green: #96f54c;
+    --fit-green: #96f54c; /* Standardized FitTrack Green */
     --fit-green-hover: #86e043;
     --fit-border: #203a1d;
     --text-muted: #a0aab2;
@@ -13,7 +14,21 @@ body {
     background-color: var(--bg-color);
     color: #ffffff;
     font-family: var(--font-main);
-    overflow-x: hidden;
+}
+
+/* --- SHARED HEADER --- */
+.cyber-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 70px;
+    background: rgba(16, 19, 17, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
 }
 
 .logo-text {
@@ -33,7 +48,7 @@ body {
     color: white;
 }
 
-/* --- FORM STYLING --- */
+/* --- FORM ELEMENTS --- */
 .cyber-group {
     margin-bottom: 1.5rem;
 }
@@ -42,9 +57,8 @@ body {
     font-size: 10px;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     color: var(--text-muted);
-    margin-bottom: 4px;
 }
 
 .cyber-input {
@@ -53,8 +67,7 @@ body {
     border-bottom: 1px solid var(--fit-border) !important;
     border-radius: 0 !important;
     color: white !important;
-    font-size: 1.1rem;
-    padding: 8px 0;
+    padding: 10px 0;
     width: 100%;
     transition: all 0.3s;
 }
@@ -65,31 +78,48 @@ body {
         box-shadow: none;
     }
 
-/* --- REGISTER BUTTON --- */
-.btn-register {
+/* --- BUTTONS & LINKS --- */
+.btn-fit-green {
     background-color: var(--fit-green);
     color: #101311;
     font-weight: 800;
     text-transform: uppercase;
-    border-radius: 50px; /* Matching your landing page style */
-    padding: 1rem;
-    width: 100%;
+    border-radius: 50px;
+    padding: 0.9rem;
     border: none;
-    letter-spacing: 1px;
     transition: all 0.3s ease;
 }
 
-    .btn-register:hover {
+    .btn-fit-green:hover {
         background-color: var(--fit-green-hover);
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(150, 245, 76, 0.3);
     }
 
-/* --- DECORATION --- */
+.login-link, .forgot-link {
+    color: var(--fit-green);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.btn-social {
+    background: #ffffff;
+    color: #101311;
+    border-radius: 50px;
+    padding: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+/* --- DECORATION (Consistent with SignUp) --- */
 .flare {
     position: fixed;
     z-index: -1;
-    filter: blur(80px);
+    filter: blur(100px);
     opacity: 0.1;
     border-radius: 50%;
     pointer-events: none;
@@ -114,44 +144,5 @@ body {
 .header-close {
     color: var(--fit-green);
     font-size: 24px;
-    transition: opacity 0.2s;
-}
-
-    .header-close:hover {
-        opacity: 0.7;
-    }
-
-.terms-text {
-    font-size: 10px;
-    color: var(--text-muted);
-    text-transform: uppercase;
-}
-
-    .terms-text a {
-        color: var(--fit-green);
-        text-decoration: none;
-    }
-/* Styling for the Login Link */
-.login-link {
-    color: var(--fit-green); /* Using your signature green #96f54c */
-    text-decoration: none;
-    font-size: 0.9rem;
-    transition: opacity 0.2s ease;
-}
-
-    .login-link:hover {
-        opacity: 0.8;
-        text-decoration: underline;
-        color: var(--fit-green) !important;
-    }
-
-/* Updated text-secondary to match the image's muted grey */
-.text-secondary {
-    color: #a0aab2 !important;
-    font-size: 0.9rem;
-}
-
-/* Ensure the button has a little gap above the login text */
-.btn-register {
-    margin-bottom: 1rem;
+    cursor: pointer;
 }

@@ -1,125 +1,73 @@
-﻿@model FitTrack.Models.RegisterViewModel
-@{
+﻿@{
     ViewData["Title"] = "Sign Up";
+    Layout = null;
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>@ViewData["Title"] - FitTrack+</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/SignUp.css" asp-append-version="true" />
+</head>
+<body>
 
-<!-- Import Bootstrap and Fonts inside the view as requested -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<link href="~/css/SignUp.css" rel="stylesheet"/>
+    <header class="cyber-header">
+        <a asp-controller="Home" asp-action="Index" class="text-decoration-none">
+            <span class="material-symbols-outlined header-close">close</span>
+        </a>
+        <h1 class="logo-text">FITTRACK</h1>
+        <div style="width: 24px;"></div>
+    </header>
 
+    <main class="container d-flex flex-column justify-content-center min-vh-100 py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-8 col-md-6 col-lg-4 text-center">
+                
+                <section class="mb-5">
+                    <h2 class="hero-title display-6">Create Account</h2>
+                </section>
 
-<!-- Header -->
-<header class="cyber-header">
-    <span class="material-symbols-outlined" style="color: var(--primary); cursor:pointer">close</span>
-    <h1 class="font-headline fw-bolder text-uppercase" style="color: var(--primary-container); font-size: 1.25rem; letter-spacing: -1px;">FITTRACK+</h1>
-    <div style="width: 24px;"></div>
-</header>
-
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-12 col-md-6 col-lg-4" style="margin-top: 6rem; margin-bottom: 8rem;">
-            
-            <!-- Hero Section -->
-            <section class="mb-5">
-                <h2 class="font-headline fw-black text-uppercase italic" style="font-size: 3rem; line-height: 1; letter-spacing: -2px;">
-                    INITIATE <span style="color: var(--secondary);">PULSE</span>
-                </h2>
-                <p class="text-body-lg" style="color: var(--on-surface-variant); font-weight: 500;">
-                    Configure your biometric profile and launch your evolution.
-                </p>
-            </section>
-
-            <!-- Form Section -->
-            <form asp-action="SignUp" method="post">
-                <div asp-validation-summary="ModelOnly" class="text-danger small text-uppercase mb-3" style="color: var(--error) !important;"></div>
-
-                <div class="cyber-input-group">
-                    <label asp-for="FullName" class="cyber-label">Full Name</label>
-                    <input asp-for="FullName" class="cyber-input" placeholder="COMMANDER NAME" type="text" />
-                    <span asp-validation-for="FullName" class="text-danger" style="font-size: 10px; color: var(--error) !important;"></span>
-                </div>
-
-                <div class="cyber-input-group">
-                    <label asp-for="Email" class="cyber-label">Neural Sync (Email)</label>
-                    <input asp-for="Email" class="cyber-input" placeholder="ACCESS@NEURAL.LINK" type="email" />
-                    <span asp-validation-for="Email" class="text-danger" style="font-size: 10px; color: var(--error) !important;"></span>
-                </div>
-
-                <div class="cyber-input-group">
-                    <label asp-for="Password" class="cyber-label">Access Key (Password)</label>
-                    <input asp-for="Password" class="cyber-input" placeholder="••••••••" type="password" />
-                    <span asp-validation-for="Password" class="text-danger" style="font-size: 10px; color: var(--error) !important;"></span>
-                </div>
-
-                <!-- Directives -->
-                <div class="mb-5">
-                    <div class="d-flex align-items-center mb-3">
-                        <h3 class="font-label small fw-bold text-uppercase me-3" style="color: var(--primary); letter-spacing: 2px; font-size: 12px;">Select Your Primary Directive</h3>
-                        <div style="flex: 1; height: 1px; background: #262626;"></div>
+                <form asp-controller="Account" asp-action="SignUp" method="post">
+                    <div class="cyber-group text-start">
+                        <label class="cyber-label">Full Name</label>
+                        <input name="FullName" class="cyber-input" type="text" required autocomplete="name" />
                     </div>
 
-                    <div class="directive-option option-muscle">
-                        <input asp-for="Directive" value="MuscleGain" type="radio" id="dir1" />
-                        <label for="dir1" class="directive-card">
-                            <div class="flex-grow-1">
-                                <div class="font-headline fw-bold text-uppercase" style="font-size: 1.1rem;">Muscle Gain</div>
-                                <div class="small text-uppercase" style="color: var(--on-surface-variant); font-size: 11px;">Hypertrophy & Power Protocol</div>
-                            </div>
-                            <span class="material-symbols-outlined" style="color: var(--on-surface-variant);">fitness_center</span>
-                        </label>
+                    <div class="cyber-group text-start">
+                        <label class="cyber-label">Email</label>
+                        <input name="Email" class="cyber-input" type="email" required autocomplete="email" />
                     </div>
 
-                    <div class="directive-option option-weight">
-                        <input asp-for="Directive" value="WeightLoss" type="radio" id="dir2" />
-                        <label for="dir2" class="directive-card">
-                            <div class="flex-grow-1">
-                                <div class="font-headline fw-bold text-uppercase" style="font-size: 1.1rem;">Weight Loss</div>
-                                <div class="small text-uppercase" style="color: var(--on-surface-variant); font-size: 11px;">Metabolic Oxidation Focus</div>
-                            </div>
-                            <span class="material-symbols-outlined" style="color: var(--on-surface-variant);">local_fire_department</span>
-                        </label>
+                    <div class="cyber-group text-start">
+                        <label class="cyber-label">Password</label>
+                        <input name="Password" class="cyber-input" type="password" required placeholder="••••••••" />
                     </div>
 
-                    <div class="directive-option option-maint">
-                        <input asp-for="Directive" value="Maintenance" type="radio" id="dir3" />
-                        <label for="dir3" class="directive-card">
-                            <div class="flex-grow-1">
-                                <div class="font-headline fw-bold text-uppercase" style="font-size: 1.1rem;">Maintenance</div>
-                                <div class="small text-uppercase" style="color: var(--on-surface-variant); font-size: 11px;">Stasis & Vitality Optimization</div>
-                            </div>
-                            <span class="material-symbols-outlined" style="color: var(--on-surface-variant);">rebase_edit</span>
-                        </label>
-                    </div>
-                    <span asp-validation-for="Directive" class="text-danger" style="font-size: 10px; color: var(--error) !important;"></span>
-                </div>
+                    <div class="mt-5">
+                        <button class="btn-register" type="submit">
+                            Register <span class="material-symbols-outlined ms-2">bolt</span>
+                        </button>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <span class="text-secondary small">Already have an account?</span>
+                            <a asp-controller="Account" asp-action="Login" class="login-link fw-bold">Login</a>
+                        </div>
+                        <p class="terms-text mt-4">
+                            By registering, you agree to our <br />
+                            <a href="#">Protocol Terms</a> &amp; <a href="#">Privacy Policy</a>
+                        </p>
 
-                <div class="text-center">
-                    <button class="btn-cyber" type="submit">
-                        START JOURNEY <span class="material-symbols-outlined align-middle ms-2">bolt</span>
-                    </button>
-                    <p class="mt-4 font-label text-uppercase" style="font-size: 10px; color: var(--on-surface-variant); line-height: 1.6;">
-                        By initiating, you agree to the <br /> 
-                        <span style="color: var(--primary); text-decoration: underline; cursor: pointer;">Protocol Terms</span> &amp; 
-                        <span style="color: var(--primary); text-decoration: underline; cursor: pointer;">Neural Privacy Policy</span>
-                    </p>
-                </div>
-            </form>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
-</div>
+    </main>
 
-<!-- Bottom Nav -->
-<nav class="cyber-nav">
-    <a asp-controller="Account" asp-action="Login" class="nav-item">
-        <span class="material-symbols-outlined">login</span>
-    </a>
-    <a asp-controller="Account" asp-action="SignUp" class="nav-item active">
-        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_add</span>
-    </a>
-</nav>
+    <div class="flare flare-1"></div>
+    <div class="flare flare-2"></div>
 
-<!-- Background Flares -->
-<div class="flare" style="top: -10%; right: -10%; width: 80%; height: 60%; background: var(--secondary);"></div>
-<div class="flare" style="bottom: -20%; left: -10%; width: 70%; height: 50%; background: var(--primary-container);"></div>
+</body>
+</html>

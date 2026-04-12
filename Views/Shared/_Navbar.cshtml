@@ -1,0 +1,33 @@
+﻿<nav class="navbar navbar-expand-md navbar-dark bg-transparent py-3 px-4 px-md-5 position-relative z-1">
+    <div class="container-fluid p-0">
+        <a class="navbar-brand d-flex flex-column" asp-controller="Home" asp-action="Index">
+            <div class="font-display fw-bold fst-italic h4 mb-0 d-flex align-items-center gap-1 tracking-wider">
+                <span class="text-fit-green">FITTRACK</span>
+            </div>
+            <span class="text-uppercase tracking-widest text-secondary small" style="font-size: 0.65rem;">
+                Your Gym Management System.
+            </span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+            <div class="navbar-nav ms-auto gap-3 align-items-md-center text-center text-md-start">
+                <a asp-controller="Home" asp-action="Features" class="nav-link nav-link-custom px-3">Features</a>
+                <a asp-controller="Home" asp-action="Pricing" class="nav-link nav-link-custom px-3">Pricing</a>
+                <a asp-controller="Home" asp-action="About" class="nav-link nav-link-custom px-3">About</a>
+                
+                @if (ViewData["Title"]?.ToString() != "Login" && ViewData["Title"]?.ToString() != "Sign Up")
+                {
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-fit-green px-4 py-2 mt-3 mt-md-0">Join Now</a>
+                }
+                else
+                {
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-fit-green px-4 py-2 mt-3 mt-md-0">Return Home</a>
+                }
+            </div>
+        </div>
+    </div>
+</nav>

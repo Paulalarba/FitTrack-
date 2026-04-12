@@ -58,7 +58,7 @@ body {
 /* Force stacking earlier if text is still blocked */
 @media (max-width: 991px) {
     .hero-title {
-        font-size: 3rem;
+        font-size:rem;
         margin-bottom: 1rem;
     }
 }

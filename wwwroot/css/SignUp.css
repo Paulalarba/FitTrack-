@@ -1,0 +1,178 @@
+﻿/* --- CYBERPUNK DESIGN SYSTEM --- */
+:root {
+    --bg-color: #0e0e0e;
+    --surface-container: #1a1a1a;
+    --surface-low: #131313;
+    --primary: #f3ffca;
+    --primary-container: #cafd00;
+    --secondary: #ff7441;
+    --on-surface-variant: #adaaaa;
+    --outline-variant: #484847;
+    --on-secondary: #410f00;
+    --error: #ff7351;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: white;
+    font-family: 'Manrope', sans-serif;
+    min-height: 100vh;
+}
+
+.font-headline {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-label {
+    font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Custom Header */
+.cyber-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 64px;
+    background: var(--bg-color);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+}
+
+/* Custom Inputs */
+.cyber-input-group {
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.cyber-label {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--on-surface-variant);
+    display: block;
+    margin-bottom: 0.5rem;
+    transition: color 0.3s;
+}
+
+.cyber-input {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid var(--outline-variant) !important;
+    border-radius: 0 !important;
+    color: white !important;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    padding: 0.75rem 0;
+    width: 100%;
+    transition: border-color 0.3s;
+}
+
+    .cyber-input:focus {
+        border-bottom-color: var(--primary-container) !important;
+        box-shadow: none !important;
+    }
+
+.cyber-input-group:focus-within .cyber-label {
+    color: var(--primary-container);
+}
+
+/* Directive Cards (The Radio Buttons) */
+.directive-option {
+    cursor: pointer;
+    margin-bottom: 0.75rem;
+}
+
+.directive-card {
+    display: flex;
+    align-items: center;
+    padding: 1.25rem;
+    background: var(--surface-low);
+    border-radius: 12px;
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.directive-option input[type="radio"] {
+    display: none;
+}
+
+    /* State Logic for Radios */
+    .directive-option input[type="radio"]:checked + .directive-card {
+        background: #262626;
+    }
+
+.option-muscle input:checked + .directive-card {
+    border-left-color: var(--primary-container);
+}
+
+.option-weight input:checked + .directive-card {
+    border-left-color: var(--secondary);
+}
+
+.option-maint input:checked + .directive-card {
+    border-left-color: #9cff93;
+}
+
+/* Button Styling */
+.btn-cyber {
+    background-color: var(--secondary);
+    color: var(--on-secondary);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 900;
+    text-transform: uppercase;
+    border-radius: 12px;
+    padding: 1.25rem;
+    width: 100%;
+    border: none;
+    box-shadow: 0 0 25px rgba(255, 116, 65, 0.2);
+    transition: transform 0.1s;
+}
+
+    .btn-cyber:active {
+        transform: scale(0.98);
+    }
+
+/* Navigation */
+.cyber-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: rgba(19, 19, 19, 0.6);
+    backdrop-filter: blur(20px);
+    display: flex;
+    justify-content: space-around;
+    padding: 0.75rem 0 1.5rem 0;
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    z-index: 1050;
+}
+
+.nav-item {
+    color: var(--on-surface-variant);
+    text-decoration: none;
+    padding: 0.75rem;
+    transition: 0.3s;
+}
+
+    .nav-item.active {
+        background: #262626;
+        color: var(--primary-container);
+        border-radius: 12px;
+        box-shadow: 0 0 15px rgba(202, 253, 0, 0.3);
+    }
+
+/* Visual background flares */
+.flare {
+    position: fixed;
+    z-index: -1;
+    filter: blur(100px);
+    opacity: 0.2;
+    border-radius: 50%;
+}

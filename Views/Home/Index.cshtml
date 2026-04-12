@@ -1,5 +1,58 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
+<link rel="stylesheet" href="~/css/landing.css" asp-append-version="true" />
 
-<h1>test</h1>
+<div class="bg-grid-pattern"></div>
+
+<nav class="navbar navbar-expand-md navbar-dark bg-transparent py-3 px-4 px-md-5 position-relative z-1">
+    <div class="container-fluid p-0">
+        <a class="navbar-brand d-flex flex-column" href="/">
+            <div class="font-display fw-bold fst-italic h4 mb-0 d-flex align-items-center gap-1 tracking-wider">
+                <span class="text-fit-green">FITTRACK</span>
+            </div>
+            <span class="text-uppercase tracking-widest text-secondary small">Your Gym Management System.</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="mainNav">
+            <div class="navbar-nav ms-auto gap-3 align-items-md-center text-center text-md-start">
+                <a asp-controller="Home" asp-action="Features" class="nav-link nav-link-custom px-3">Features</a>
+                <a asp-controller="Home" asp-action="Pricing" class="nav-link nav-link-custom px-3">Pricing</a>
+                <a asp-controller="Home" asp-action="About" class="nav-link nav-link-custom px-3">About</a>
+                <a asp-controller="Account" asp-action="Login" class="btn btn-fit-green px-4 py-2 mt-3 mt-md-0">Sign In</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<main class="container px-4 px-md-5 position-relative z-1">
+    <section class="row align-items-center mt-2 pt-3 pt-lg-4 overflow-hidden">
+        <div class="col-lg-6 d-flex flex-column align-items-center align-items-lg-start text-center text-lg-start gap-4" style="z-index: 10; position: relative;">
+            <h1 class="hero-title font-display fw-bold fst-italic text-uppercase tracking-wide">
+                <span class="neon-text d-block">GET FIT</span>
+                <span class="neon-text d-block">WITH</span>
+                <span class="text-white d-block">FITTRACK</span>
+            </h1>
+            <p class="fs-5 text-light opacity-75 mx-auto mx-lg-0" style="max-width: 500px;">
+                A complete SaaS platform connecting gym owners, trainers, and clients — powered by AI for smarter coaching, personalized nutrition, and real-time progress tracking.
+            </p>
+            <div class="w-100">
+                <a asp-controller="Booking" asp-action="Index" class="btn btn-fit-green btn-lg px-5 py-3 w-100 w-lg-auto">
+                    Pre-Book Now
+                </a>
+            </div>
+        </div>
+    
+        <div class="col-lg-6 d-flex justify-content-center justify-content-lg-end mt-5 mt-lg-0 order-last order-lg-2">
+            <div class="position-relative w-100 glow-border p-2 bg-dark rounded-4 shadow-strong" style="max-width: 700px; z-index: 1;">
+                <img src="~/Public/FitTrackAdmin.png"
+                     class="img-fluid rounded-3 opacity-75"
+                     alt="FitTrack Dashboard Mockup" />
+            </div>
+        </div>
+    </section>
+</main>

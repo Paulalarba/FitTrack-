@@ -1,0 +1,56 @@
+@model MemberTransactionsViewModel
+
+@{
+    ViewData["Title"] = "My Transactions";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div>
+            <span class="eyebrow">Billing History</span>
+            <h1 class="page-title mt-3">My Transactions</h1>
+            <p class="text-secondary mb-0">Review your payment requests and membership billing history.</p>
+        </div>
+        <a asp-action="RequestPayment" class="btn btn-fit-green">New Payment Request</a>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="alert alert-success">@message</div>
+    }
+
+    <div class="panel-card">
+        <div class="table-responsive">
+            <table class="table table-dark align-middle">
+                <thead>
+                    <tr>
+                        <th>Plan</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var transaction in Model.Transactions)
+                    {
+                        <tr>
+                            <td>@transaction.MembershipPlan</td>
+                            <td>@transaction.Amount.ToString("C")</td>
+                            <td>@transaction.PaymentDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                            <td><span class="badge badge-fit">@transaction.Status</span></td>
+                            <td>@(string.IsNullOrWhiteSpace(transaction.Notes) ? "-" : transaction.Notes)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-fit mt-4">
+            @for (var i = 1; i <= Model.TotalPages; i++)
+            {
+                <a asp-action="Transactions" asp-route-page="@i" class="@(Model.Page == i ? "active" : string.Empty)">@i</a>
+            }
+        </div>
+    </div>
+</section>

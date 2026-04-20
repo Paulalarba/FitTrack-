@@ -1,14 +1,29 @@
 using FitTrack.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
 
-namespace FitTrack.Controllers
+namespace FitTrack.Controllers;
+
+public class HomeController(UserManager<ApplicationUser> userManager) : Controller
 {
-    public class HomeController : Controller
+    [AllowAnonymous]
+    public async Task<IActionResult> Index()
     {
-        public IActionResult Index()
+        if (User.Identity?.IsAuthenticated == true)
         {
-            return View();
+            var user = await userManager.GetUserAsync(User);
+            if (user is not null && await userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
+
+            return RedirectToAction("Dashboard", "Member");
         }
+
+        return View();
     }
+
+    [AllowAnonymous]
+    public IActionResult AccessDenied() => View();
 }

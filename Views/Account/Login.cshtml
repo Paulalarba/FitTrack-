@@ -1,53 +1,48 @@
-﻿@{
-    ViewData["Title"] = "Commander Access";
+@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
 }
 
 <main class="container d-flex flex-column justify-content-center align-items-center min-vh-100 px-4 py-3">
-    <div class ="w-100" style="max-width: 450px;">
-        <section class="text-center mb-5">
-            <h2 class="hero-title">Let's sign in</h2>
+    <div class="auth-card w-100">
+        <section class="text-center mb-4">
+            <span class="eyebrow">Welcome Back</span>
+            <h2 class="hero-title mt-3">Sign In to FitTrack</h2>
+            <p class="text-secondary mb-0">Use your admin or member account to continue.</p>
         </section>
 
-        <form asp-controller="Account" asp-action="Login" method="post" class="vstack gap-4">
-            
-            <!-- Email Field -->
+        <form asp-action="Login" method="post" class="vstack gap-4">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
             <div class="cyber-group text-start">
-                <label class="cyber-label">Email</label>
-                <input name="Email" class="cyber-input" type="email" required autocomplete="email" />
+                <label asp-for="Email" class="cyber-label"></label>
+                <input asp-for="Email" class="cyber-input" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
-            <!-- Password Field -->
             <div class="cyber-group text-start">
-                <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label class="cyber-label mb-0">Password</label>
-                    <a href="#" class="login-link" style="font-size: 12px;">Forgot?</a>
-                </div>
-                <input name="Password" class="cyber-input" type="password" required placeholder="••••••••••••" />
+                <label asp-for="Password" class="cyber-label"></label>
+                <input asp-for="Password" class="cyber-input" autocomplete="current-password" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
 
-            <div class="vstack gap-3 mt-2">
-                <button class="btn-fit-green w-100" type="submit">
-                    Access Dashboard <span class="material-symbols-outlined ms-2">bolt</span>
-                </button>
+            <div class="form-check">
+                <input asp-for="RememberMe" class="form-check-input" />
+                <label asp-for="RememberMe" class="form-check-label text-secondary"></label>
+            </div>
 
-                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-                    <span class="text-secondary small">New here?</span>
-                    <a asp-controller="Account" asp-action="SignUp" class="login-link fw-bold">Register Account</a>
-                </div>
+            <button class="btn-fit-green w-100" type="submit">Access Dashboard</button>
 
-                <!-- Divider -->
-                <div class="d-flex align-items-center gap-3 my-2">
-                    <hr class="flex-grow-1 opacity-25 border-secondary">
-                    <span class="text-secondary tracking-widest text-uppercase" style="font-size: 9px;">OR</span>
-                    <hr class="flex-grow-1 opacity-25 border-secondary">
-                </div>
-
-                <!-- Social Login -->
-                <button class="btn btn-light rounded-pill w-100 d-flex align-items-center justify-content-center gap-2 py-2" type="button">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="18" />
-                    <span class="fw-bold text-dark" style="font-size: 0.9rem;">Google</span>
-                </button>
+            <div class="d-flex justify-content-between align-items-center px-1">
+                <span class="text-secondary small">New member?</span>
+                <a asp-action="SignUp" class="login-link fw-bold">Create Account</a>
             </div>
         </form>
     </div>
 </main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

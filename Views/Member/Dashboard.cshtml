@@ -1,0 +1,79 @@
+@model MemberDashboardViewModel
+
+@{
+    ViewData["Title"] = "Member Dashboard";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div>
+            <span class="eyebrow">Member Portal</span>
+            <h1 class="page-title mt-3">Welcome, @Model.User.FullName</h1>
+            <p class="text-secondary mb-0">Keep your profile and membership details up to date.</p>
+        </div>
+        <div class="d-flex gap-3">
+            <a asp-action="RequestPayment" class="btn btn-fit-green">Request Payment</a>
+            <a asp-controller="Account" asp-action="Profile" class="btn btn-outline-light rounded-pill">Edit Profile</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="panel-card stat-card">
+                <span class="stat-label">Membership Status</span>
+                <strong class="stat-value">@(Model.CurrentMembership?.Status ?? "Not Started")</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-card stat-card">
+                <span class="stat-label">Current Plan</span>
+                <strong class="stat-value">@(Model.CurrentMembership?.PlanName ?? "No Plan")</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-card stat-card">
+                <span class="stat-label">Membership Ends</span>
+                <strong class="stat-value">@(Model.CurrentMembership?.EndDate.ToLocalTime().ToString("MMM dd, yyyy") ?? "Pending")</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="panel-card h-100">
+                <h2 class="section-title">Profile Summary</h2>
+                <p class="text-secondary mb-2"><strong>Name:</strong> @Model.User.FullName</p>
+                <p class="text-secondary mb-2"><strong>Email:</strong> @Model.User.Email</p>
+                <p class="text-secondary mb-0"><strong>Phone:</strong> @(string.IsNullOrWhiteSpace(Model.User.PhoneNumber) ? "Not set" : Model.User.PhoneNumber)</p>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="panel-card h-100">
+                <h2 class="section-title">Recent Transactions</h2>
+                <div class="table-responsive">
+                    <table class="table table-dark align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Plan</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var transaction in Model.RecentTransactions)
+                            {
+                                <tr>
+                                    <td>@transaction.MembershipPlan</td>
+                                    <td>@transaction.Amount.ToString("C")</td>
+                                    <td>@transaction.PaymentDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                                    <td><span class="badge badge-fit">@transaction.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

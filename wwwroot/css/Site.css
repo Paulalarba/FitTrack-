@@ -1,10 +1,9 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syncopate:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syncopate:wght@700&display=swap');
 
 :root {
     --fit-black: #101311;
     --fit-green: #96f54c;
     --fit-green-hover: #86e043;
-    --fit-dark-green: #161b17;
     --fit-border: #203a1d;
     --text-muted: #a0aab2;
     --font-main: 'Inter', sans-serif;
@@ -18,7 +17,10 @@ body {
     overflow-x: hidden;
 }
 
-/* --- TYPOGRAPHY --- */
+a {
+    text-decoration: none;
+}
+
 .font-display {
     font-family: var(--font-display), sans-serif;
 }
@@ -39,23 +41,33 @@ body {
     letter-spacing: 0.1em;
 }
 
-.hero-title {
+.hero-title,
+.hero-title-landing,
+.page-title {
     font-family: var(--font-display);
-    font-weight: 300;
-    font-style: italic;
     text-transform: uppercase;
-    color: white;
-    font-size: 30px;
-    line-height: 1.4;
+    line-height: 1.15;
 }
+
+.hero-title,
 .hero-title-landing {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-style: italic;
+    font-size: clamp(2rem, 5vw, 4rem);
+}
+
+.page-title {
+    font-size: clamp(1.75rem, 3.5vw, 2.6rem);
+}
+
+.eyebrow {
+    display: inline-block;
     text-transform: uppercase;
-    color: white;
-    font-size: 30px;
-    line-height: 1.4;
+    letter-spacing: 0.25em;
+    font-size: 0.75rem;
+    color: var(--fit-green);
+}
+
+.hero-copy {
+    max-width: 560px;
 }
 
 .neon-text {
@@ -63,7 +75,6 @@ body {
     text-shadow: 0 0 10px rgba(150, 245, 76, 0.5), 0 0 20px rgba(150, 245, 76, 0.3);
 }
 
-/* --- SHARED COMPONENTS --- */
 .btn-fit-green {
     background-color: var(--fit-green);
     color: var(--fit-black);
@@ -76,14 +87,13 @@ body {
     letter-spacing: 1px;
 }
 
-    .btn-fit-green:hover {
-        background-color: var(--fit-green-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(150, 245, 76, 0.3);
-        color: var(--fit-black);
-    }
+.btn-fit-green:hover {
+    background-color: var(--fit-green-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(150, 245, 76, 0.3);
+    color: var(--fit-black);
+}
 
-/* Cyber Form Elements */
 .cyber-group {
     margin-bottom: 1.5rem;
 }
@@ -109,27 +119,45 @@ body {
     transition: all 0.3s;
 }
 
-    .cyber-input:focus {
-        border-bottom-color: var(--fit-green) !important;
-        outline: none;
-        box-shadow: none;
-    }
+.cyber-input:focus {
+    border-bottom-color: var(--fit-green) !important;
+    outline: none;
+    box-shadow: none;
+}
 
-/* Navbar Customization */
+.form-control-dark,
+.form-select.form-control-dark {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--fit-border);
+    color: #fff;
+}
+
+.form-control-dark:focus,
+.form-select.form-control-dark:focus {
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: var(--fit-green);
+    color: #fff;
+    box-shadow: 0 0 0 0.15rem rgba(150, 245, 76, 0.15);
+}
+
 .nav-link-custom {
     color: white !important;
     transition: color 0.3s ease;
 }
 
-    .nav-link-custom:hover {
-        color: var(--fit-green) !important;
-    }
+.nav-link-custom:hover,
+.login-link {
+    color: var(--fit-green) !important;
+}
 
 .navbar-toggler-icon {
     background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(150, 245, 76, 1)' stroke-width='2' stroke-linecap='round' d='M4 22h22M4 14h22M4 6h22'/%3E%3C/svg%3E") !important;
 }
 
-/* Background Decorations */
+.nav-subtitle {
+    font-size: 0.65rem;
+}
+
 .bg-grid-pattern {
     position: fixed;
     inset: 0;
@@ -166,5 +194,119 @@ body {
 
 .glow-border {
     border: 1px solid var(--fit-border) !important;
-    box-shadow: inset 0 0 20px rgba(32, 58, 29, 0.5), 0 20px 50px rgba(0,0,0,0.5);
+    box-shadow: inset 0 0 20px rgba(32, 58, 29, 0.5), 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.panel-card {
+    background: rgba(14, 17, 15, 0.8);
+    border: 1px solid rgba(150, 245, 76, 0.12);
+    border-radius: 24px;
+    padding: 1.75rem;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+}
+
+.panel-title,
+.section-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+}
+
+.stat-card {
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-size: 0.72rem;
+}
+
+.stat-value {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: var(--fit-green);
+}
+
+.auth-card {
+    max-width: 520px;
+    padding: 2rem;
+    border-radius: 24px;
+    background: rgba(14, 17, 15, 0.85);
+    border: 1px solid rgba(150, 245, 76, 0.16);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+}
+
+.auth-card-wide {
+    max-width: 720px;
+}
+
+.badge-fit {
+    background: rgba(150, 245, 76, 0.14);
+    color: var(--fit-green);
+    border: 1px solid rgba(150, 245, 76, 0.22);
+}
+
+.table-dark {
+    --bs-table-bg: transparent;
+    --bs-table-color: #fff;
+    --bs-table-border-color: rgba(255, 255, 255, 0.08);
+    margin-bottom: 0;
+}
+
+.pagination-fit {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pagination-fit a {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--fit-border);
+    color: #fff;
+}
+
+.pagination-fit a.active {
+    background: var(--fit-green);
+    color: var(--fit-black);
+    border-color: var(--fit-green);
+}
+
+.profile-preview {
+    width: 110px;
+    height: 110px;
+}
+
+.profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid rgba(150, 245, 76, 0.35);
+}
+
+.profile-image-placeholder {
+    display: grid;
+    place-items: center;
+    background: rgba(150, 245, 76, 0.1);
+    color: var(--fit-green);
+    font-family: var(--font-display);
+}
+
+@media (max-width: 767.98px) {
+    .panel-card,
+    .auth-card {
+        padding: 1.25rem;
+    }
 }

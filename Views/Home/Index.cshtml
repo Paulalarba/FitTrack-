@@ -1,34 +1,50 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "FitTrack";
 }
 
 <main class="container px-4 px-md-5 position-relative z-1">
-    <section class="row align-items-center mt-2 pt-5 pt-lg-4 overflow-hidden">
-        <!-- Left Column: Hero Text -->
-        <div class="col-lg-6 d-flex flex-column align-items-center align-items-lg-start text-center text-lg-start gap-4" style="z-index: 10; position: relative;">
+    <section class="row align-items-center mt-2 pt-5 pt-lg-4 g-5">
+        <div class="col-lg-6 d-flex flex-column align-items-center align-items-lg-start text-center text-lg-start gap-4">
+            <span class="eyebrow">Gym Management System</span>
             <h1 class="hero-title-landing fw-bold fst-italic text-uppercase tracking-wide">
-                <span class="neon-text d-block">GET FIT</span>
-                <span class="neon-text d-block">WITH</span>
-                <span class="text-white d-block">FITTRACK</span>
+                <span class="neon-text d-block">Run Your Gym</span>
+                <span class="text-white d-block">With Clarity</span>
             </h1>
-            
-            <p class="fs-5 text-light opacity-75 mx-auto mx-lg-0" style="max-width: 500px;">
-                A complete SaaS platform connecting gym owners, trainers, and clients — powered by AI for smarter coaching, personalized nutrition, and real-time progress tracking.
+
+            <p class="fs-5 text-light opacity-75 mx-auto mx-lg-0 hero-copy">
+                FitTrack gives administrators a control center for members, memberships, and payments while members get a simple self-service dashboard for profiles and billing history.
             </p>
 
-            <div class="w-100 d-flex justify-content-center justify-content-lg-start">
-                <a asp-controller="Booking" asp-action="Index" class="btn btn-fit-green btn-lg px-5 py-3">
-                    Pre-Book Now
-                </a>
+            <div class="d-flex flex-column flex-sm-row gap-3">
+                <a asp-controller="Account" asp-action="SignUp" class="btn btn-fit-green btn-lg px-5 py-3">Create Member Account</a>
+                <a asp-controller="Account" asp-action="Login" class="btn btn-outline-light btn-lg rounded-pill px-5 py-3">Admin Login</a>
             </div>
         </div>
-    
-        <!-- Right Column: Dashboard Mockup -->
-        <div class="col-lg-6 d-flex justify-content-center justify-content-lg-end mt-5 mt-lg-0 order-last order-lg-2">
-            <div class="position-relative w-100 glow-border p-2 bg-dark rounded-4 shadow-strong" style="max-width: 700px;">
-                <img src="~/Public/FitTrackAdmin.png"
-                     class="img-fluid rounded-3 opacity-75"
-                     alt="FitTrack Dashboard Mockup" />
+
+        <div class="col-lg-6">
+            <div class="position-relative glow-border p-3 bg-dark rounded-4 shadow-strong">
+                <img src="~/Public/FitTrackAdmin.png" class="img-fluid rounded-4 opacity-75" alt="FitTrack dashboard preview" />
+            </div>
+        </div>
+    </section>
+
+    <section class="row g-4 mt-5 pt-4">
+        <div class="col-md-4">
+            <div class="panel-card h-100">
+                <h3 class="panel-title">Admin Controls</h3>
+                <p class="text-secondary mb-0">Manage users, approve transactions, search records, and monitor active memberships from one dashboard.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-card h-100">
+                <h3 class="panel-title">Member Self-Service</h3>
+                <p class="text-secondary mb-0">Members can register, edit profiles, upload a profile photo, view membership status, and track recent payment activity.</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-card h-100">
+                <h3 class="panel-title">Built for Growth</h3>
+                <p class="text-secondary mb-0">Validation, pagination, and SQL-backed persistence create a strong base for payment gateways, notifications, and future mobile support.</p>
             </div>
         </div>
     </section>

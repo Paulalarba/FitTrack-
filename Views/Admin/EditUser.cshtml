@@ -1,0 +1,64 @@
+@model ManageUserViewModel
+
+@{
+    ViewData["Title"] = "Edit User";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="panel-card">
+        <span class="eyebrow">Administrator</span>
+        <h1 class="page-title mt-3">Edit User Account</h1>
+
+        <form asp-action="EditUser" method="post" class="row g-4 mt-1">
+            @Html.AntiForgeryToken()
+            <input asp-for="Id" type="hidden" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small col-12"></div>
+
+            <div class="col-md-6">
+                <label asp-for="FullName" class="cyber-label"></label>
+                <input asp-for="FullName" class="cyber-input" />
+                <span asp-validation-for="FullName" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Email" class="cyber-label"></label>
+                <input asp-for="Email" class="cyber-input" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="PhoneNumber" class="cyber-label"></label>
+                <input asp-for="PhoneNumber" class="cyber-input" />
+                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Role" class="cyber-label"></label>
+                <select asp-for="Role" class="form-select form-control-dark">
+                    <option value="User">User</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Address" class="cyber-label"></label>
+                <input asp-for="Address" class="cyber-input" />
+                <span asp-validation-for="Address" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Password" class="cyber-label"></label>
+                <input asp-for="Password" class="cyber-input" placeholder="Leave blank to keep the current password" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <button class="btn btn-fit-green px-4" type="submit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

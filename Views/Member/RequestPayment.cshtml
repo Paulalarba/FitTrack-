@@ -1,0 +1,46 @@
+@model TransactionRequestViewModel
+
+@{
+    ViewData["Title"] = "Request Payment";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="panel-card">
+        <span class="eyebrow">Membership Payments</span>
+        <h1 class="page-title mt-3">Submit Payment Request</h1>
+        <p class="text-secondary">Your request will appear in the admin transaction queue for approval.</p>
+
+        <form asp-action="RequestPayment" method="post" class="row g-4 mt-1">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small col-12"></div>
+
+            <div class="col-md-6">
+                <label asp-for="MembershipPlan" class="cyber-label"></label>
+                <select asp-for="MembershipPlan" class="form-select form-control-dark">
+                    <option value="Monthly">Monthly</option>
+                    <option value="Annual">Annual</option>
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Amount" class="cyber-label"></label>
+                <input asp-for="Amount" class="cyber-input" />
+                <span asp-validation-for="Amount" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Notes" class="cyber-label"></label>
+                <textarea asp-for="Notes" class="form-control form-control-dark" rows="4" placeholder="Reference number or payment notes"></textarea>
+                <span asp-validation-for="Notes" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <button class="btn btn-fit-green px-4" type="submit">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

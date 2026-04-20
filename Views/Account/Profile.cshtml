@@ -1,0 +1,76 @@
+@model EditProfileViewModel
+
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="panel-card">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-4 mb-4">
+            <div>
+                <span class="eyebrow">Account Management</span>
+                <h1 class="page-title mt-3">Edit Profile</h1>
+                <p class="text-secondary mb-0">Update your member details and profile picture.</p>
+            </div>
+            <div class="profile-preview align-self-start">
+                @if (!string.IsNullOrWhiteSpace(Model.CurrentProfilePicture))
+                {
+                    <img src="@Model.CurrentProfilePicture" alt="Profile picture" class="profile-image" />
+                }
+                else
+                {
+                    <div class="profile-image profile-image-placeholder">FT</div>
+                }
+            </div>
+        </div>
+
+        @if (TempData["StatusMessage"] is string message)
+        {
+            <div class="alert alert-success">@message</div>
+        }
+
+        <form asp-action="Profile" method="post" enctype="multipart/form-data" class="row g-4">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small col-12"></div>
+
+            <div class="col-md-6">
+                <label asp-for="FullName" class="cyber-label"></label>
+                <input asp-for="FullName" class="cyber-input" />
+                <span asp-validation-for="FullName" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Email" class="cyber-label"></label>
+                <input asp-for="Email" class="cyber-input" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="PhoneNumber" class="cyber-label"></label>
+                <input asp-for="PhoneNumber" class="cyber-input" />
+                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="Address" class="cyber-label"></label>
+                <input asp-for="Address" class="cyber-input" />
+                <span asp-validation-for="Address" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="ProfileImage" class="cyber-label"></label>
+                <input asp-for="ProfileImage" class="form-control form-control-dark" accept=".jpg,.jpeg,.png,.webp" />
+                <small class="text-secondary">Accepted files: JPG, JPEG, PNG, WEBP up to 2 MB.</small>
+                <span asp-validation-for="ProfileImage" class="text-danger small d-block"></span>
+            </div>
+
+            <div class="col-12">
+                <button class="btn btn-fit-green px-4" type="submit">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

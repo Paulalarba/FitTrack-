@@ -1,0 +1,95 @@
+@model AdminDashboardViewModel
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div>
+            <span class="eyebrow">Administrator</span>
+            <h1 class="page-title mt-3">Dashboard Overview</h1>
+            <p class="text-secondary mb-0">A quick snapshot of FitTrack operations.</p>
+        </div>
+        <div class="d-flex gap-3">
+            <a asp-action="Users" class="btn btn-fit-green">Manage Users</a>
+            <a asp-action="Transactions" class="btn btn-outline-light rounded-pill">Review Transactions</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="panel-card stat-card">
+                <span class="stat-label">Total Users</span>
+                <strong class="stat-value">@Model.TotalUsers</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-card stat-card">
+                <span class="stat-label">Total Transactions</span>
+                <strong class="stat-value">@Model.TotalTransactions</strong>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="panel-card stat-card">
+                <span class="stat-label">Active Memberships</span>
+                <strong class="stat-value">@Model.ActiveMemberships</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="panel-card h-100">
+                <h2 class="section-title">Newest Members</h2>
+                <div class="table-responsive">
+                    <table class="table table-dark align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Joined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model.RecentUsers)
+                            {
+                                <tr>
+                                    <td>@user.FullName</td>
+                                    <td>@user.Email</td>
+                                    <td>@user.JoinedDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="panel-card h-100">
+                <h2 class="section-title">Recent Payments</h2>
+                <div class="table-responsive">
+                    <table class="table table-dark align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Plan</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var transaction in Model.RecentTransactions)
+                            {
+                                <tr>
+                                    <td>@transaction.User?.FullName</td>
+                                    <td>@transaction.MembershipPlan</td>
+                                    <td><span class="badge badge-fit">@transaction.Status</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

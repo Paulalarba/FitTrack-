@@ -1,48 +1,63 @@
-﻿@{
+@model RegisterViewModel
+
+@{
     ViewData["Title"] = "Sign Up";
 }
 
 <main class="container d-flex flex-column justify-content-center align-items-center min-vh-100 px-4 py-3">
-    <div class="w-100" style="max-width: 450px;">
-        <section class="text-center mb-5">
-            <h2 class="hero-title">Create Account</h2>
+    <div class="auth-card auth-card-wide w-100">
+        <section class="text-center mb-4">
+            <span class="eyebrow">Member Registration</span>
+            <h2 class="hero-title mt-3">Create Your Account</h2>
+            <p class="text-secondary mb-0">Join FitTrack to manage your membership and payment history.</p>
         </section>
 
-        <form asp-controller="Account" asp-action="SignUp" method="post" class="vstack gap-4">
-            
-            <!-- Full Name -->
-            <div class="cyber-group text-start">
-                <label class="cyber-label">Full Name</label>
-                <input name="FullName" class="cyber-input" type="text" required autocomplete="name" />
+        <form asp-action="SignUp" method="post" class="row g-4">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small col-12"></div>
+
+            <div class="col-md-6">
+                <label asp-for="FullName" class="cyber-label"></label>
+                <input asp-for="FullName" class="cyber-input" autocomplete="name" />
+                <span asp-validation-for="FullName" class="text-danger small"></span>
             </div>
 
-            <!-- Email -->
-            <div class="cyber-group text-start">
-                <label class="cyber-label">Email</label>
-                <input name="Email" class="cyber-input" type="email" required autocomplete="email" />
+            <div class="col-md-6">
+                <label asp-for="PhoneNumber" class="cyber-label"></label>
+                <input asp-for="PhoneNumber" class="cyber-input" autocomplete="tel" />
+                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
             </div>
 
-            <!-- Password -->
-            <div class="cyber-group text-start">
-                <label class="cyber-label">Password</label>
-                <input name="Password" class="cyber-input" type="password" required placeholder="••••••••" />
+            <div class="col-12">
+                <label asp-for="Email" class="cyber-label"></label>
+                <input asp-for="Email" class="cyber-input" autocomplete="email" />
+                <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
-            <div class="mt-4 vstack gap-3">
-                <button class="btn-fit-green w-100" type="submit">
-                    Register <span class="material-symbols-outlined ms-2">bolt</span>
-                </button>
+            <div class="col-md-6">
+                <label asp-for="Password" class="cyber-label"></label>
+                <input asp-for="Password" class="cyber-input" autocomplete="new-password" />
+                <span asp-validation-for="Password" class="text-danger small"></span>
+            </div>
 
-                <div class="d-flex justify-content-between align-items-center mt-2 px-1">
-                    <span class="text-secondary small">Already have an account?</span>
-                    <a asp-controller="Account" asp-action="Login" class="login-link fw-bold">Login Now</a>
-                </div>
+            <div class="col-md-6">
+                <label asp-for="ConfirmPassword" class="cyber-label"></label>
+                <input asp-for="ConfirmPassword" class="cyber-input" autocomplete="new-password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+            </div>
 
-                <p class="text-center text-secondary" style="font-size: 10px; text-transform: uppercase; line-height: 1.6; letter-spacing: 1px;">
-                    By registering, you agree to our <br />
-                    <a href="#" class="login-link">Protocol Terms</a> &amp; <a href="#" class="login-link">Privacy Policy</a>
-                </p>
+            <div class="col-12 mt-2">
+                <button class="btn-fit-green w-100" type="submit">Register Account</button>
+            </div>
+
+            <div class="col-12 d-flex justify-content-between align-items-center px-1">
+                <span class="text-secondary small">Already registered?</span>
+                <a asp-action="Login" class="login-link fw-bold">Login Now</a>
             </div>
         </form>
     </div>
 </main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

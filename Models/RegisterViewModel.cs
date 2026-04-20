@@ -4,22 +4,19 @@ namespace FitTrack.Models
 {
     public class RegisterViewModel
     {
-        [Required(ErrorMessage = "Commander name is required")]
+        [Required(ErrorMessage = "Full Name is required")]
         [Display(Name = "Full Name")]
         public string FullName { get; set; }
 
-        [Required(ErrorMessage = "Neural sync email is required")]
-        [EmailAddress(ErrorMessage = "Invalid neural link address")]
+        [Required(ErrorMessage = "Email is required")]
         [Display(Name = "Email")]
         public string Email { get; set; }
 
-        [Required(ErrorMessage = "Access key is required")]
+        [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]
-        [MinLength(8, ErrorMessage = "Access key must be at least 8 characters")]
+        [MinLength(8, ErrorMessage = "Password must be at least 8 characters")]
         [Display(Name = "Password")]
         public string Password { get; set; }
 
-        [Required(ErrorMessage = "Please select a primary directive")]
-        public string Directive { get; set; } // MuscleGain, WeightLoss, Maintenance
     }
 }

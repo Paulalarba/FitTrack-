@@ -1,9 +1,7 @@
 @model EditProfileViewModel
-
 @{
     ViewData["Title"] = "Profile";
 }
-
 <section class="container px-4 px-md-5 py-5">
     <div class="panel-card">
         <div class="d-flex flex-column flex-lg-row justify-content-between gap-4 mb-4">
@@ -12,57 +10,61 @@
                 <h1 class="page-title mt-3">Edit Profile</h1>
                 <p class="text-secondary mb-0">Update your member details and profile picture.</p>
             </div>
-            <div class="profile-preview align-self-start">
+            <div class="profile-preview align-self-start" style="position:relative; cursor:pointer;" onclick="document.getElementById('profileImageInput').click()" title="Change profile picture">
                 @if (!string.IsNullOrWhiteSpace(Model.CurrentProfilePicture))
                 {
-                    <img src="@Model.CurrentProfilePicture" alt="Profile picture" class="profile-image" />
+                    <img id="profileImagePreview" src="@Model.CurrentProfilePicture" alt="Profile picture" class="profile-image" />
                 }
                 else
                 {
-                    <div class="profile-image profile-image-placeholder">FT</div>
+                    <div id="profileImagePreview" class="profile-image profile-image-placeholder">FT</div>
                 }
+                <div style="
+                    position:absolute; inset:0;
+                    background:rgba(0,0,0,0.45);
+                    border-radius:50%;
+                    display:flex; align-items:center; justify-content:center;
+                    opacity:0; transition:opacity 0.2s;
+                " onmouseenter="this.style.opacity=1" onmouseleave="this.style.opacity=0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="white" viewBox="0 0 24 24">
+                        <path d="M12 15.2A3.2 3.2 0 1 0 12 8.8a3.2 3.2 0 0 0 0 6.4Z" />
+                        <path d="M9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9Zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10Z" />
+                    </svg>
+                </div>
             </div>
         </div>
-
         @if (TempData["StatusMessage"] is string message)
         {
             <div class="alert alert-success">@message</div>
         }
-
         <form asp-action="Profile" method="post" enctype="multipart/form-data" class="row g-4">
             @Html.AntiForgeryToken()
             <div asp-validation-summary="ModelOnly" class="text-danger small col-12"></div>
-
             <div class="col-md-6">
                 <label asp-for="FullName" class="cyber-label"></label>
                 <input asp-for="FullName" class="cyber-input" />
                 <span asp-validation-for="FullName" class="text-danger small"></span>
             </div>
-
             <div class="col-md-6">
                 <label asp-for="Email" class="cyber-label"></label>
                 <input asp-for="Email" class="cyber-input" />
                 <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
-
             <div class="col-md-6">
                 <label asp-for="PhoneNumber" class="cyber-label"></label>
                 <input asp-for="PhoneNumber" class="cyber-input" />
                 <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
             </div>
-
             <div class="col-md-6">
                 <label asp-for="Address" class="cyber-label"></label>
                 <input asp-for="Address" class="cyber-input" />
                 <span asp-validation-for="Address" class="text-danger small"></span>
             </div>
 
-            <div class="col-12">
-                <label asp-for="ProfileImage" class="cyber-label"></label>
-                <input asp-for="ProfileImage" class="form-control form-control-dark" accept=".jpg,.jpeg,.png,.webp" />
-                <small class="text-secondary">Accepted files: JPG, JPEG, PNG, WEBP up to 2 MB.</small>
-                <span asp-validation-for="ProfileImage" class="text-danger small d-block"></span>
-            </div>
+            {{!-- Hidden file input, no longer visible --}}
+            <input id="profileImageInput" asp-for="ProfileImage" type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" />
+            <span asp-validation-for="ProfileImage" class="text-danger small d-block col-12"></span>
+            <small class="text-secondary col-12" style="margin-top:-12px">Click your profile picture to change it. Accepted: JPG, JPEG, PNG, WEBP up to 2 MB.</small>
 
             <div class="col-12">
                 <button class="btn btn-fit-green px-4" type="submit">Save Changes</button>
@@ -73,4 +75,29 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('profileImageInput').addEventListener('change', function () {
+            const file = this.files[0];
+            if (!file) return;
+
+            const preview = document.getElementById('profileImagePreview');
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                // If it's currently a placeholder div, replace with an img
+                if (preview.tagName === 'DIV') {
+                    const img = document.createElement('img');
+                    img.id = 'profileImagePreview';
+                    img.alt = 'Profile picture';
+                    img.className = preview.className.replace('profile-image-placeholder', '').trim();
+                    img.src = e.target.result;
+                    preview.replaceWith(img);
+                } else {
+                    preview.src = e.target.result;
+                }
+            };
+
+            reader.readAsDataURL(file);
+        });
+    </script>
 }

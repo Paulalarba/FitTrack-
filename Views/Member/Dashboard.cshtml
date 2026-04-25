@@ -13,27 +13,49 @@
         </div>
         <div class="d-flex gap-3">
             <a asp-action="RequestPayment" class="btn btn-fit-green">Request Payment</a>
-            <a asp-controller="Account" asp-action="Profile" class="btn btn-outline-light rounded-pill">Edit Profile</a>
+            <<a asp-controller="Account" asp-action="Profile" class="btn-edit-profile">Edit Profile</a>
         </div>
     </div>
 
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="panel-card stat-card">
+            <div class="panel-card stat-card stat-card-green">
                 <span class="stat-label">Membership Status</span>
                 <strong class="stat-value">@(Model.CurrentMembership?.Status ?? "Not Started")</strong>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="panel-card stat-card">
+            <div class="panel-card stat-card stat-card-teal">
                 <span class="stat-label">Current Plan</span>
                 <strong class="stat-value">@(Model.CurrentMembership?.PlanName ?? "No Plan")</strong>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="panel-card stat-card">
+            @{
+                var endDate = Model.CurrentMembership?.EndDate.ToLocalTime();
+                var daysLeft = endDate.HasValue ? (endDate.Value - DateTime.Now).TotalDays : (double?)null;
+                var expiryClass = daysLeft == null ? "stat-card-amber"
+                : daysLeft < 0 ? "stat-card-expired"
+                : daysLeft <= 7 ? "stat-card-expiring"
+                : "stat-card-teal";
+            }
+            <div class="panel-card stat-card @expiryClass">
                 <span class="stat-label">Membership Ends</span>
-                <strong class="stat-value">@(Model.CurrentMembership?.EndDate.ToLocalTime().ToString("MMM dd, yyyy") ?? "Pending")</strong>
+                <strong class="stat-value" style="font-size: clamp(1.2rem, 3vw, 1.8rem);">
+                    @(endDate?.ToString("MMM dd, yyyy") ?? "Pending")
+                </strong>
+                @if (daysLeft.HasValue && daysLeft <= 7 && daysLeft >= 0)
+                {
+                    <span style="font-size: 0.75rem; color: #EF9F27; margin-top: 4px;">
+                        ⚠ Expires in @((int)daysLeft) day(s)
+                    </span>
+                }
+                else if (daysLeft.HasValue && daysLeft < 0)
+                {
+                    <span style="font-size: 0.75rem; color: #E24B4A; margin-top: 4px;">
+                        ✕ Membership expired
+                    </span>
+                }
             </div>
         </div>
     </div>

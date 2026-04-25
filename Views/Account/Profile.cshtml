@@ -60,8 +60,7 @@
                 <input asp-for="Address" class="cyber-input" />
                 <span asp-validation-for="Address" class="text-danger small"></span>
             </div>
-
-            {{!-- Hidden file input, no longer visible --}}
+            
             <input id="profileImageInput" asp-for="ProfileImage" type="file" accept=".jpg,.jpeg,.png,.webp" style="display:none" />
             <span asp-validation-for="ProfileImage" class="text-danger small d-block col-12"></span>
             <small class="text-secondary col-12" style="margin-top:-12px">Click your profile picture to change it. Accepted: JPG, JPEG, PNG, WEBP up to 2 MB.</small>

@@ -60,7 +60,17 @@
                             <td>@transaction.MembershipPlan</td>
                             <td>@transaction.Amount.ToString("C")</td>
                             <td>@transaction.PaymentDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
-                            <td><span class="badge badge-fit">@transaction.Status</span></td>
+                            <td>
+                                @{
+                                    var badgeClass = transaction.Status switch
+                                    {
+                                        "Approved" => "badge-approved",
+                                        "Rejected" => "badge-rejected",
+                                        _ => "badge-pending"
+                                    };
+                                }
+                                <span class="badge @badgeClass">@transaction.Status</span>
+                            </td>
                             <td class="text-end">
                                 @if (transaction.Status == "Pending")
                                 {

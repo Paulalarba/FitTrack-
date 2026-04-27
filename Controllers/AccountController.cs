@@ -54,16 +54,19 @@ public class AccountController(
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SignUp(RegisterViewModel model)
     {
+        // Validate the input model
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
+        // Ensure the "User" role exists in the database
         if (!await roleManager.RoleExistsAsync("User"))
         {
             await roleManager.CreateAsync(new IdentityRole("User"));
         }
 
+        // Map the ViewModel data to the ApplicationUser entity
         var user = new ApplicationUser
         {
             UserName = model.Email,
@@ -74,6 +77,7 @@ public class AccountController(
             EmailConfirmed = true
         };
 
+        // Attempt to create the user in the Identity database
         var result = await userManager.CreateAsync(user, model.Password);
         if (!result.Succeeded)
         {
@@ -85,10 +89,16 @@ public class AccountController(
             return View(model);
         }
 
+        //Assign the user to the "User" role
         await userManager.AddToRoleAsync(user, "User");
-        await signInManager.SignInAsync(user, isPersistent: false);
-        return RedirectToAction("Dashboard", "Member");
+
+        // Set a success message to be displayed on the Login page
+        TempData["StatusMessage"] = "Account created successfully! Please log in.";
+
+        //  Redirect to the Login action
+        return RedirectToAction(nameof(Login));
     }
+
 
     [Authorize]
     [HttpGet]

@@ -24,6 +24,11 @@ public class HomeController(UserManager<ApplicationUser> userManager) : Controll
         return View();
     }
 
+    public IActionResult AboutUs()
+    {
+        return View();
+    }
+
     [AllowAnonymous]
     public IActionResult AccessDenied() => View();
 }

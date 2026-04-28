@@ -230,8 +230,10 @@ a {
 
 .stat-value {
     font-family: var(--font-display);
-    font-size: clamp(2rem, 5vw, 3rem);
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
     color: var(--fit-green);
+    font-weight: 700;
+    letter-spacing: 0.03em;
 }
 
 .auth-card {

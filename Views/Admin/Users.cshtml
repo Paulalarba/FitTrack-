@@ -11,7 +11,7 @@
             <h1 class="page-title mt-3">Users</h1>
             <p class="text-secondary mb-0">Search, review, edit, and delete member accounts.</p>
         </div>
-        <a asp-action="CreateUser" class="btn btn-fit-green">Create User</a>
+        <a asp-action="CreateUser" class="btn-edit-profile" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">Create User</a>
     </div>
 
     @if (TempData["StatusMessage"] is string message)
@@ -26,7 +26,7 @@
                 <input type="text" name="searchTerm" value="@Model.SearchTerm" class="cyber-input" placeholder="Search by name, email, or ID" />
             </div>
             <div class="col-md-4">
-                <button class="btn btn-fit-green w-100" type="submit">Search</button>
+                <button class="btn btn-fit-green w-100" type="submit" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">Search</button>
             </div>
         </form>
 

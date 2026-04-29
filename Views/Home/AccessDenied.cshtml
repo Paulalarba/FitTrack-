@@ -2,11 +2,26 @@
     ViewData["Title"] = "Access Denied";
 }
 
-<section class="container px-4 px-md-5 py-5">
-    <div class="panel-card text-center">
-        <span class="eyebrow">Authorization</span>
-        <h1 class="page-title mt-3">Access Denied</h1>
-        <p class="text-secondary">You do not have permission to open this page with your current account.</p>
-        <a asp-controller="Home" asp-action="Index" class="btn btn-fit-green mt-3">Return Home</a>
+<main class="container d-flex flex-column justify-content-center align-items-center min-vh-100 px-4 py-3">
+    <div class="auth-card w-100 text-center">
+        <div class="access-denied-icon">
+            ✕
+        </div>
+
+        <span class="eyebrow">Error 403</span>
+        <h2 class="hero-title mt-3" style="font-size: clamp(1.5rem, 4vw, 2.5rem);">Access Denied</h2>
+        <p class="text-secondary mt-3 mb-4">
+            You don't have permission to view this page.<br />
+            Please log in with the correct account or return home.
+        </p>
+
+        <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+            <a asp-controller="Account" asp-action="Login" class="btn btn-fit-green px-5 py-3">
+                Go to Login
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-light rounded-pill px-5 py-3">
+                Back to Home
+            </a>
+        </div>
     </div>
-</section>
+</main>

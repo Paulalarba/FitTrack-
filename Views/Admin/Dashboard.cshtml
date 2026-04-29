@@ -19,19 +19,19 @@
 
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="panel-card stat-card">
+            <div class="panel-card stat-card stat-card-green">
                 <span class="stat-label">Total Users</span>
                 <strong class="stat-value">@Model.TotalUsers</strong>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="panel-card stat-card">
+            <div class="panel-card stat-card stat-card-amber">
                 <span class="stat-label">Total Transactions</span>
                 <strong class="stat-value">@Model.TotalTransactions</strong>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="panel-card stat-card">
+            <div class="panel-card stat-card stat-card-teal">
                 <span class="stat-label">Active Memberships</span>
                 <strong class="stat-value">@Model.ActiveMemberships</strong>
             </div>
@@ -83,7 +83,17 @@
                                 <tr>
                                     <td>@transaction.User?.FullName</td>
                                     <td>@transaction.MembershipPlan</td>
-                                    <td><span class="badge badge-fit">@transaction.Status</span></td>
+                                    <td>
+                                        @{
+                                            var badgeClass = transaction.Status switch
+                                            {
+                                                "Approved" => "badge-approved",
+                                                "Rejected" => "badge-rejected",
+                                                _ => "badge-pending"
+                                            };
+                                        }
+                                        <span class="badge @badgeClass">@transaction.Status</span>
+                                    </td>
                                 </tr>
                             }
                         </tbody>

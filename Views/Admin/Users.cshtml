@@ -48,7 +48,16 @@
                         <tr>
                             <td>@user.FullName</td>
                             <td>@user.Email</td>
-                            <td>@user.Role</td>
+                            <td>
+                                @if (user.Role == "Admin")
+                                {
+                                    <span class="badge-role-admin">Admin</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-role-member">Member</span>
+                                }
+                            </td>
                             <td>@user.MembershipStatus</td>
                             <td>@user.JoinedDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
                             <td class="text-end">

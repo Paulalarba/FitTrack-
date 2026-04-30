@@ -11,7 +11,10 @@
             <h1 class="page-title mt-3">My Wallet</h1>
             <p class="text-secondary mb-0">Track your balance, deposits, and membership wallet payments.</p>
         </div>
-        <a asp-action="Deposit" class="btn btn-fit-green">Deposit Funds</a>
+        <div class="d-flex gap-3">
+            <a asp-controller="Member" asp-action="TransferFunds" class="btn-edit-profile">Transfer Funds</a>
+            <a asp-action="Deposit" class="btn btn-fit-green">Deposit Funds</a>
+        </div>
     </div>
 
     @if (TempData["StatusMessage"] is string message)

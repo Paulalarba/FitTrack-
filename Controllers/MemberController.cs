@@ -33,6 +33,10 @@ public class MemberController(ApplicationDbContext context, UserManager<Applicat
                 .Where(m => m.UserId == user.Id)
                 .OrderByDescending(m => m.EndDate)
                 .FirstOrDefaultAsync(),
+            WalletBalance = await context.Wallets
+                .Where(w => w.UserId == user.Id)
+                .Select(w => (decimal?)w.Balance)
+                .FirstOrDefaultAsync() ?? 0M,
             RecentTransactions = await context.Transactions
                 .Where(t => t.UserId == user.Id)
                 .OrderByDescending(t => t.PaymentDate)
@@ -67,6 +71,22 @@ public class MemberController(ApplicationDbContext context, UserManager<Applicat
         });
     }
 
+    public async Task<IActionResult> PaymentOptions()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        var accounts = await context.PaymentAccounts
+            .OrderBy(p => p.PaymentType)
+            .ThenBy(p => p.AccountName)
+            .ToListAsync();
+
+        return View(accounts);
+    }
+
     [HttpGet]
     public IActionResult RequestPayment() => View(new TransactionRequestViewModel { Amount = 850M, MembershipPlan = "Classic Membership" });
 
@@ -98,18 +118,40 @@ public class MemberController(ApplicationDbContext context, UserManager<Applicat
             return View(model);
         }
 
+        var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == user.Id);
+        if (wallet is null || wallet.Balance < model.Amount)
+        {
+            var balance = wallet?.Balance ?? 0M;
+            ModelState.AddModelError(string.Empty, $"Insufficient wallet balance. Current balance: {balance:C}.");
+            return View(model);
+        }
+
+        wallet.Balance -= model.Amount;
+        context.WalletTransactions.Add(new WalletTransaction
+        {
+            WalletId = wallet.Id,
+            Amount = model.Amount,
+            Type = "Debit",
+            Status = "Approved",
+            PaymentMethod = "Wallet",
+            ReferenceNumber = $"Membership payment - {model.MembershipPlan}",
+            CreatedAt = DateTime.UtcNow
+        });
+
         var transaction = new Transaction
         {
             UserId = user.Id,
             Amount = model.Amount,
             MembershipPlan = model.MembershipPlan,
             Notes = model.Notes,
-            Status = "Pending",
+            Status = "Approved",
             PaymentDate = DateTime.UtcNow
         };
 
         context.Transactions.Add(transaction);
 
+        var startDate = DateTime.UtcNow.Date;
+        var endDate = startDate.AddMonths(1);
         var membership = await context.Memberships
             .Where(m => m.UserId == user.Id)
             .OrderByDescending(m => m.EndDate)
@@ -121,21 +163,23 @@ public class MemberController(ApplicationDbContext context, UserManager<Applicat
             {
                 UserId = user.Id,
                 PlanName = model.MembershipPlan,
-                StartDate = DateTime.UtcNow.Date,
-                EndDate = DateTime.UtcNow.Date,
-                Status = "Pending",
+                StartDate = startDate,
+                EndDate = endDate,
+                Status = "Active",
                 MonthlyFee = model.Amount
             });
         }
-        else if (membership.Status != "Active")
+        else
         {
             membership.PlanName = model.MembershipPlan;
             membership.MonthlyFee = model.Amount;
-            membership.Status = "Pending";
+            membership.StartDate = startDate;
+            membership.EndDate = endDate;
+            membership.Status = "Active";
         }
 
         await context.SaveChangesAsync();
-        TempData["StatusMessage"] = "Payment request submitted for admin approval.";
+        TempData["StatusMessage"] = "Membership paid from wallet and activated.";
         return RedirectToAction(nameof(Transactions));
     }
 }

@@ -9,9 +9,9 @@
         <div>
             <span class="eyebrow">Billing History</span>
             <h1 class="page-title mt-3">My Transactions</h1>
-            <p class="text-secondary mb-0">Review your payment requests and membership billing history.</p>
+            <p class="text-secondary mb-0">Review your wallet-paid membership billing history.</p>
         </div>
-        <a asp-action="RequestPayment" class="btn btn-fit-green">New Payment Request</a>
+        <a asp-action="RequestPayment" class="btn btn-fit-green">Pay Membership</a>
     </div>
 
     @if (TempData["StatusMessage"] is string message)

@@ -22,4 +22,5 @@ public class ApplicationUser : IdentityUser
 
     public ICollection<Transaction> Transactions { get; set; } = [];
     public ICollection<Membership> Memberships { get; set; } = [];
+    public Wallet? Wallet { get; set; }
 }

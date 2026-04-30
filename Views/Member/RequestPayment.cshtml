@@ -7,8 +7,9 @@
 <section class="container px-4 px-md-5 py-5">
     <div class="panel-card">
         <span class="eyebrow">Membership Payments</span>
-        <h1 class="page-title mt-3">Submit Payment Request</h1>
-        <p class="text-secondary">Your request will appear in the admin transaction queue for approval.</p>
+        <h1 class="page-title mt-3">Pay With Wallet</h1>
+        <p class="text-secondary">Membership payments are deducted from your approved wallet balance and activated immediately.</p>
+        <a asp-action="PaymentOptions" class="text-fit-green d-inline-block mb-3">View admin payment accounts</a>
 
         <form asp-action="RequestPayment" method="post" class="row g-4 mt-1">
             @Html.AntiForgeryToken()
@@ -39,7 +40,7 @@
             </div>
 
             <div class="col-12">
-                <button class="btn btn-fit-green px-4" type="submit">Submit Request</button>
+                <button class="btn btn-fit-green px-4" type="submit">Pay From Wallet</button>
             </div>
         </form>
     </div>

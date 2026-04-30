@@ -6,7 +6,7 @@ public class TransactionRequestViewModel
 {
     [Required]
     [Display(Name = "Membership Plan")]
-    public string MembershipPlan { get; set; } = "Monthly";
+    public string MembershipPlan { get; set; } = "Classic Membership";
 
     [Required]
     [Range(1, 1000000)]

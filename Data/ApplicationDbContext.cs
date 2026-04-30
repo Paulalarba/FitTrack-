@@ -13,6 +13,9 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
     public DbSet<Transaction> Transactions => Set<Transaction>();
     public DbSet<Membership> Memberships => Set<Membership>();
+    public DbSet<Wallet> Wallets => Set<Wallet>();
+    public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
+    public DbSet<PaymentAccount> PaymentAccounts => Set<PaymentAccount>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -37,5 +40,32 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
         builder.Entity<Membership>()
             .Property(m => m.MonthlyFee)
             .HasPrecision(18, 2);
+
+        builder.Entity<Wallet>()
+            .HasOne(w => w.User)
+            .WithOne(u => u.Wallet)
+            .HasForeignKey<Wallet>(w => w.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Wallet>()
+            .HasIndex(w => w.UserId)
+            .IsUnique();
+
+        builder.Entity<Wallet>()
+            .Property(w => w.Balance)
+            .HasPrecision(18, 2);
+
+        builder.Entity<WalletTransaction>()
+            .HasOne(wt => wt.Wallet)
+            .WithMany(w => w.WalletTransactions)
+            .HasForeignKey(wt => wt.WalletId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<WalletTransaction>()
+            .Property(wt => wt.Amount)
+            .HasPrecision(18, 2);
+
+        builder.Entity<PaymentAccount>()
+            .HasIndex(p => p.PaymentType);
     }
 }

@@ -12,9 +12,17 @@ namespace FitTrack.Controllers;
 public class AdminController(
     ApplicationDbContext context,
     UserManager<ApplicationUser> userManager,
-    RoleManager<IdentityRole> roleManager) : Controller
+    RoleManager<IdentityRole> roleManager,
+    IWebHostEnvironment environment) : Controller
 {
     private const int PageSize = 10;
+    private static readonly HashSet<string> AllowedQrExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
 
     public async Task<IActionResult> Dashboard()
     {
@@ -266,6 +274,183 @@ public class AdminController(
         });
     }
 
+    public async Task<IActionResult> WalletRequests()
+    {
+        var requests = await context.WalletTransactions
+            .Include(t => t.Wallet)
+            .ThenInclude(w => w!.User)
+            .Where(t => t.Type == "Credit" && t.Status == "Pending")
+            .OrderBy(t => t.CreatedAt)
+            .ToListAsync();
+
+        return View(requests);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ApproveDeposit(int id)
+    {
+        var request = await context.WalletTransactions
+            .Include(t => t.Wallet)
+            .FirstOrDefaultAsync(t => t.Id == id && t.Type == "Credit");
+
+        if (request is null || request.Wallet is null)
+        {
+            return NotFound();
+        }
+
+        if (request.Status != "Pending")
+        {
+            TempData["StatusMessage"] = $"Deposit request #{request.Id} has already been {request.Status.ToLower()}.";
+            return RedirectToAction(nameof(WalletRequests));
+        }
+
+        request.Status = "Approved";
+        request.Wallet.Balance += request.Amount;
+
+        await context.SaveChangesAsync();
+        TempData["StatusMessage"] = $"Deposit request #{request.Id} approved.";
+        return RedirectToAction(nameof(WalletRequests));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RejectDeposit(int id)
+    {
+        var request = await context.WalletTransactions
+            .FirstOrDefaultAsync(t => t.Id == id && t.Type == "Credit");
+
+        if (request is null)
+        {
+            return NotFound();
+        }
+
+        if (request.Status != "Pending")
+        {
+            TempData["StatusMessage"] = $"Deposit request #{request.Id} has already been {request.Status.ToLower()}.";
+            return RedirectToAction(nameof(WalletRequests));
+        }
+
+        request.Status = "Rejected";
+
+        await context.SaveChangesAsync();
+        TempData["StatusMessage"] = $"Deposit request #{request.Id} rejected.";
+        return RedirectToAction(nameof(WalletRequests));
+    }
+
+    public async Task<IActionResult> PaymentAccounts()
+    {
+        var accounts = await context.PaymentAccounts
+            .OrderBy(p => p.PaymentType)
+            .ThenBy(p => p.AccountName)
+            .ToListAsync();
+
+        return View(accounts);
+    }
+
+    [HttpGet]
+    public IActionResult CreatePaymentAccount() => View(new PaymentAccountViewModel());
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreatePaymentAccount(PaymentAccountViewModel model)
+    {
+        ValidateQrCode(model.QrCodeFile, requireFile: true);
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var qrCodePath = await SaveQrCodeAsync(model.QrCodeFile!);
+        context.PaymentAccounts.Add(new PaymentAccount
+        {
+            AccountName = model.AccountName,
+            AccountNumber = model.AccountNumber,
+            PaymentType = model.PaymentType,
+            QrCodePath = qrCodePath,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        await context.SaveChangesAsync();
+        TempData["StatusMessage"] = "Payment account added.";
+        return RedirectToAction(nameof(PaymentAccounts));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> EditPaymentAccount(int id)
+    {
+        var account = await context.PaymentAccounts.FindAsync(id);
+        if (account is null)
+        {
+            return NotFound();
+        }
+
+        return View(new PaymentAccountViewModel
+        {
+            Id = account.Id,
+            AccountName = account.AccountName,
+            AccountNumber = account.AccountNumber,
+            PaymentType = account.PaymentType,
+            ExistingQrCodePath = account.QrCodePath
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditPaymentAccount(PaymentAccountViewModel model)
+    {
+        if (model.Id is null)
+        {
+            return NotFound();
+        }
+
+        var account = await context.PaymentAccounts.FindAsync(model.Id.Value);
+        if (account is null)
+        {
+            return NotFound();
+        }
+
+        ValidateQrCode(model.QrCodeFile, requireFile: false);
+
+        if (!ModelState.IsValid)
+        {
+            model.ExistingQrCodePath = account.QrCodePath;
+            return View(model);
+        }
+
+        account.AccountName = model.AccountName;
+        account.AccountNumber = model.AccountNumber;
+        account.PaymentType = model.PaymentType;
+        account.UpdatedAt = DateTime.UtcNow;
+
+        if (model.QrCodeFile is not null)
+        {
+            account.QrCodePath = await SaveQrCodeAsync(model.QrCodeFile);
+        }
+
+        await context.SaveChangesAsync();
+        TempData["StatusMessage"] = "Payment account updated.";
+        return RedirectToAction(nameof(PaymentAccounts));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeletePaymentAccount(int id)
+    {
+        var account = await context.PaymentAccounts.FindAsync(id);
+        if (account is null)
+        {
+            return NotFound();
+        }
+
+        context.PaymentAccounts.Remove(account);
+        await context.SaveChangesAsync();
+
+        TempData["StatusMessage"] = "Payment account removed.";
+        return RedirectToAction(nameof(PaymentAccounts));
+    }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateTransactionStatus(int id, string status)
@@ -328,5 +513,43 @@ public class AdminController(
         await context.SaveChangesAsync();
         TempData["StatusMessage"] = $"Transaction #{transaction.Id} marked as {status}.";
         return RedirectToAction(nameof(Transactions));
+    }
+
+    private void ValidateQrCode(IFormFile? file, bool requireFile)
+    {
+        if (file is null)
+        {
+            if (requireFile)
+            {
+                ModelState.AddModelError(nameof(PaymentAccountViewModel.QrCodeFile), "QR code image is required.");
+            }
+
+            return;
+        }
+
+        var extension = Path.GetExtension(file.FileName);
+        if (!AllowedQrExtensions.Contains(extension))
+        {
+            ModelState.AddModelError(nameof(PaymentAccountViewModel.QrCodeFile), "QR code must be a JPG, PNG, or WEBP image.");
+        }
+
+        if (file.Length > 5 * 1024 * 1024)
+        {
+            ModelState.AddModelError(nameof(PaymentAccountViewModel.QrCodeFile), "QR code image must be 5 MB or smaller.");
+        }
+    }
+
+    private async Task<string> SaveQrCodeAsync(IFormFile file)
+    {
+        var uploadsPath = Path.Combine(environment.WebRootPath, "uploads", "payment-accounts");
+        Directory.CreateDirectory(uploadsPath);
+
+        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+        var fullPath = Path.Combine(uploadsPath, fileName);
+
+        await using var stream = System.IO.File.Create(fullPath);
+        await file.CopyToAsync(stream);
+
+        return $"/uploads/payment-accounts/{fileName}";
     }
 }

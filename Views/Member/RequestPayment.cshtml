@@ -16,16 +16,20 @@
 
             <div class="col-md-6">
                 <label asp-for="MembershipPlan" class="cyber-label"></label>
-                <select asp-for="MembershipPlan" class="form-select form-control-dark">
-                    <option value="Monthly">Monthly</option>
-                    <option value="Annual">Annual</option>
+                <select asp-for="MembershipPlan" class="form-select form-control-dark" id="membershipPlanSelect">
+                    <option value="Classic Membership">Classic Membership (₱850/mo)</option>
+                    <option value="PF Black Card Membership">PF Black Card Membership (₱1,500/mo)</option>
                 </select>
             </div>
 
             <div class="col-md-6">
                 <label asp-for="Amount" class="cyber-label"></label>
-                <input asp-for="Amount" class="cyber-input" />
+                <input asp-for="Amount" class="cyber-input" id="amountInput" readonly />
                 <span asp-validation-for="Amount" class="text-danger small"></span>
+            </div>
+            
+            <div class="col-12 mt-2" id="perksSection">
+                <!-- Perks will be rendered here dynamically -->
             </div>
 
             <div class="col-12">
@@ -43,4 +47,59 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const plans = {
+            "Classic Membership": {
+                price: 850,
+                perks: [
+                    "Unlimited access to home gym branch",
+                    "Access to basic gym equipment (cardio & strength)",
+                    "Free basic fitness training",
+                    "Free WiFi"
+                ]
+            },
+            "PF Black Card Membership": {
+                price: 1500,
+                perks: [
+                    "Access to all gym branches",
+                    "Bring a guest anytime (free)",
+                    "Access to premium amenities (massage chairs, etc.)",
+                    "Advanced workout programs",
+                    "Exclusive member discounts"
+                ]
+            }
+        };
+
+        const selectElement = document.getElementById('membershipPlanSelect');
+        const amountElement = document.getElementById('amountInput');
+        const perksSection = document.getElementById('perksSection');
+
+        function updatePlanDetails() {
+            const selectedPlan = selectElement.value;
+            const planDetails = plans[selectedPlan];
+            
+            if (planDetails) {
+                amountElement.value = planDetails.price;
+                
+                let perksHtml = `
+                    <div class="card bg-dark border-secondary">
+                        <div class="card-body py-3">
+                            <h6 class="text-success mb-2"><i class="bi bi-star-fill me-2"></i>Plan Perks</h6>
+                            <ul class="mb-0 text-secondary list-unstyled">
+                `;
+                planDetails.perks.forEach(perk => {
+                    perksHtml += `<li class="mb-1"><i class="bi bi-check2 text-success me-2"></i>${perk}</li>`;
+                });
+                perksHtml += '</ul></div></div>';
+                perksSection.innerHTML = perksHtml;
+            }
+        }
+
+        selectElement.addEventListener('change', updatePlanDetails);
+        
+        // Initialize on load to set correct amount and perks based on default selection
+        document.addEventListener("DOMContentLoaded", function() {
+            updatePlanDetails();
+        });
+    </script>
 }

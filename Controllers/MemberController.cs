@@ -68,7 +68,7 @@ public class MemberController(ApplicationDbContext context, UserManager<Applicat
     }
 
     [HttpGet]
-    public IActionResult RequestPayment() => View(new TransactionRequestViewModel { Amount = 1500M });
+    public IActionResult RequestPayment() => View(new TransactionRequestViewModel { Amount = 850M, MembershipPlan = "Classic Membership" });
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -78,6 +78,19 @@ public class MemberController(ApplicationDbContext context, UserManager<Applicat
         if (user is null)
         {
             return RedirectToAction("Login", "Account");
+        }
+
+        if (model.MembershipPlan == "Classic Membership" && model.Amount != 850M)
+        {
+            ModelState.AddModelError("Amount", "Invalid amount for Classic Membership. The price is ₱850.");
+        }
+        else if (model.MembershipPlan == "PF Black Card Membership" && model.Amount != 1500M)
+        {
+            ModelState.AddModelError("Amount", "Invalid amount for PF Black Card Membership. The price is ₱1,500.");
+        }
+        else if (model.MembershipPlan != "Classic Membership" && model.MembershipPlan != "PF Black Card Membership")
+        {
+            ModelState.AddModelError("MembershipPlan", "Invalid membership plan selected.");
         }
 
         if (!ModelState.IsValid)

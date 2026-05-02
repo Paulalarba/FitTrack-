@@ -30,9 +30,10 @@
                 <span asp-validation-for="Email" class="text-danger small"></span>
             </div>
 
-            <div class="cyber-group text-start">
-                <label asp-for="Password" type for ="password" class="cyber-label"></label>
-                <input asp-for="Password" class="cyber-input" autocomplete="current-password" />
+            <div class="cyber-group text-start position-relative">
+                <label asp-for="Password" class="cyber-label"></label>
+                <input asp-for="Password" type="password" class="cyber-input pe-5" id="passwordInput" />
+                <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
                 <span asp-validation-for="Password" class="text-danger small"></span>
             </div>
 
@@ -53,4 +54,17 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const togglePassword = document.querySelector('#togglePassword');
+        const password = document.querySelector('#passwordInput');
+
+        togglePassword.addEventListener('click', function () {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+
+            this.classList.toggle('bi-eye');
+            this.classList.toggle('bi-eye-slash');
+        });
+    </script>
 }

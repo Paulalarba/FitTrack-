@@ -27,17 +27,31 @@
                     {
                         <a asp-controller="Admin" asp-action="Dashboard" class="nav-link nav-link-custom px-3">Dashboard</a>
                         <a asp-controller="Admin" asp-action="Users" class="nav-link nav-link-custom px-3">Users</a>
-                        <a asp-controller="Admin" asp-action="Transactions" class="nav-link nav-link-custom px-3">Transactions</a>
-                        <a asp-controller="Admin" asp-action="WalletRequests" class="nav-link nav-link-custom px-3">Wallet Requests</a>
-                        <a asp-controller="Admin" asp-action="PaymentAccounts" class="nav-link nav-link-custom px-3">Payment Accounts</a>
+                        <div class="nav-item dropdown">
+                            <a class="nav-link nav-link-custom px-3 dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                Payments
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark" style="background-color:#1a1a1a; border:1px solid rgba(150,245,76,0.2);">
+                                <li><a asp-controller="Admin" asp-action="Transactions" class="dropdown-item text-white">Transactions</a></li>
+                                <li><a asp-controller="Admin" asp-action="WalletRequests" class="dropdown-item text-white">Wallet Requests</a></li>
+                                <li><a asp-controller="Admin" asp-action="PaymentAccounts" class="dropdown-item text-white">Payment Accounts</a></li>
+                            </ul>
+                        </div>
                     }
                     else
                     {
                         <a asp-controller="Member" asp-action="Dashboard" class="nav-link nav-link-custom px-3">Dashboard</a>
-                        <a asp-controller="Wallet" asp-action="Index" class="nav-link nav-link-custom px-3">Wallet</a>
-                        <a asp-controller="Member" asp-action="TransferFunds" class="nav-link nav-link-custom px-3">Transfer</a>
-                        <a asp-controller="Member" asp-action="PaymentOptions" class="nav-link nav-link-custom px-3">Payment Options</a>
-                        <a asp-controller="Member" asp-action="Transactions" class="nav-link nav-link-custom px-3">My Payments</a>
+                        <div class="nav-item dropdown">
+                            <a class="nav-link nav-link-custom px-3 dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                Payments
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-dark" style="background-color:#1a1a1a; border:1px solid rgba(150,245,76,0.2);">
+                                <li><a asp-controller="Wallet" asp-action="Index" class="dropdown-item text-white">Wallet</a></li>
+                                <li><a asp-controller="Member" asp-action="TransferFunds" class="dropdown-item text-white">Transfer</a></li>
+                                <li><a asp-controller="Member" asp-action="PaymentOptions" class="dropdown-item text-white">Payment Options</a></li>
+                                <li><a asp-controller="Member" asp-action="Transactions" class="dropdown-item text-white">My Payments</a></li>
+                            </ul>
+                        </div>
                     }
 
                     <a asp-controller="Account" asp-action="Profile" class="nav-link nav-link-custom px-3">Profile</a>

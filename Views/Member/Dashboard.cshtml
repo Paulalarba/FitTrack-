@@ -2,24 +2,40 @@
 
 @{
     ViewData["Title"] = "Member Dashboard";
+    var endDate = Model.CurrentMembership?.EndDate.ToLocalTime();
+    var daysLeft = endDate.HasValue ? (endDate.Value - DateTime.Now).TotalDays : (double?)null;
+    var expiryClass = daysLeft == null ? "stat-card-amber"
+        : daysLeft < 0 ? "stat-card-expired"
+        : daysLeft <= 7 ? "stat-card-expiring"
+        : "stat-card-teal";
+
+    var totalDays = Model.CurrentMembership != null
+        ? (Model.CurrentMembership.EndDate - Model.CurrentMembership.StartDate).TotalDays
+        : 0;
+    var progressPct = (totalDays > 0 && daysLeft.HasValue && daysLeft >= 0)
+        ? Math.Round((1 - daysLeft.Value / totalDays) * 100)
+        : 0;
 }
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
 <section class="container px-4 px-md-5 py-5">
+
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
         <div>
             <span class="eyebrow">Member Portal</span>
-            <h1 class="page-title mt-2" style="font-size: 1.8rem;">Welcome, @Model.User.FullName</h1>
-            <p class="text-secondary mb-0">Keep your profile and membership details up to date.</p>
+            <h1 class="page-title mt-2" style="font-size:1.8rem;">Welcome, @Model.User.FullName</h1>
+            @if (Model.CurrentMembership == null)
+            {
+                <p class="mb-0 small" style="color:#96f54c;">You haven't started a membership yet — join a plan today!</p>
+            }
+            else
+            {
+                <p class="text-secondary mb-0">Keep your profile and membership details up to date.</p>
+            }
         </div>
-        <div class="d-flex gap-3">
-            <a asp-controller="Wallet" asp-action="Index" class="btn-edit-profile" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">Wallet</a>
-            <a asp-action="TransferFunds" class="btn-edit-profile" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">Transfer</a>
-            <a asp-action="RequestPayment" class="btn btn-fit-green" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">Pay Membership</a>
-            <a asp-controller="Account" asp-action="Profile" class="btn-edit-profile" style="font-size: 0.9rem; padding: 0.5rem 1.2rem;">Edit Profile</a>
-        </div>
+        
     </div>
 
+  
     <div class="row g-4 mb-4">
         <div class="col-md-3">
             <div class="panel-card stat-card stat-card-green">
@@ -34,30 +50,18 @@
             </div>
         </div>
         <div class="col-md-3">
-            @{
-                var endDate = Model.CurrentMembership?.EndDate.ToLocalTime();
-                var daysLeft = endDate.HasValue ? (endDate.Value - DateTime.Now).TotalDays : (double?)null;
-                var expiryClass = daysLeft == null ? "stat-card-amber"
-                : daysLeft < 0 ? "stat-card-expired"
-                : daysLeft <= 7 ? "stat-card-expiring"
-                : "stat-card-teal";
-            }
             <div class="panel-card stat-card @expiryClass">
                 <span class="stat-label">Membership Ends</span>
-                <strong class="stat-value" style="font-size: clamp(1.2rem, 3vw, 1.8rem);">
+                <strong class="stat-value" style="font-size:clamp(1.2rem,3vw,1.8rem);">
                     @(endDate?.ToString("MMM dd, yyyy") ?? "Pending")
                 </strong>
                 @if (daysLeft.HasValue && daysLeft <= 7 && daysLeft >= 0)
                 {
-                    <span style="font-size: 0.75rem; color: #EF9F27; margin-top: 4px;">
-                        ⚠ Expires in @((int)daysLeft) day(s)
-                    </span>
+                    <span style="font-size:0.75rem;color:#EF9F27;margin-top:4px;">⚠ Expires in @((int)daysLeft) day(s)</span>
                 }
                 else if (daysLeft.HasValue && daysLeft < 0)
                 {
-                    <span style="font-size: 0.75rem; color: #E24B4A; margin-top: 4px;">
-                        ✕ Membership expired
-                    </span>
+                    <span style="font-size:0.75rem;color:#E24B4A;margin-top:4px;">✕ Membership expired</span>
                 }
             </div>
         </div>
@@ -69,6 +73,53 @@
         </div>
     </div>
 
+    @if (Model.CurrentMembership != null && daysLeft.HasValue && daysLeft >= 0)
+    {
+        <div class="panel-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="section-title mb-0">Membership Progress</h2>
+                <span class="small text-secondary">@((int)daysLeft) day(s) remaining</span>
+            </div>
+            <div style="background:#1a1a1a;border-radius:8px;height:10px;overflow:hidden;">
+                <div style="width:@progressPct%;background:#96f54c;height:100%;border-radius:8px;transition:width 0.5s ease;"></div>
+            </div>
+            <div class="d-flex justify-content-between mt-1">
+                <span class="small text-secondary">@Model.CurrentMembership.StartDate.ToLocalTime().ToString("MMM dd, yyyy")</span>
+                <span class="small text-secondary">@endDate?.ToString("MMM dd, yyyy")</span>
+            </div>
+        </div>
+    }
+
+    
+    <div class="row g-3 mb-4">
+        <div class="col-12"><h2 class="section-title mb-2">Quick Actions</h2></div>
+        <div class="col-6 col-md-3">
+            <a asp-action="RequestPayment" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4" style="transition:border 0.2s;">
+                <i class="bi bi-credit-card" style="font-size:1.5rem;color:#96f54c;"></i>
+                <span class="small text-white fw-bold">Pay Membership</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a asp-controller="Wallet" asp-action="Index" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
+                <i class="bi bi-wallet2" style="font-size:1.5rem;color:#96f54c;"></i>
+                <span class="small text-white fw-bold">My Wallet</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a asp-action="Transactions" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
+                <i class="bi bi-receipt" style="font-size:1.5rem;color:#96f54c;"></i>
+                <span class="small text-white fw-bold">My Payments</span>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a asp-controller="Account" asp-action="Profile" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
+                <i class="bi bi-person-circle" style="font-size:1.5rem;color:#96f54c;"></i>
+                <span class="small text-white fw-bold">Edit Profile</span>
+            </a>
+        </div>
+    </div>
+
+   
     <div class="row g-4">
         <div class="col-lg-4">
             <div class="panel-card h-100">
@@ -92,14 +143,26 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var transaction in Model.RecentTransactions)
+                            @if (!Model.RecentTransactions.Any())
                             {
                                 <tr>
-                                    <td>@transaction.MembershipPlan</td>
-                                    <td>@transaction.Amount.ToString("C")</td>
-                                    <td>@transaction.PaymentDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
-                                    <td><span class="badge badge-fit">@transaction.Status</span></td>
+                                    <td colspan="4" class="text-center text-secondary py-4">
+                                        <i class="bi bi-inbox d-block mb-2" style="font-size:1.5rem;"></i>
+                                        No transactions yet.
+                                    </td>
                                 </tr>
+                            }
+                            else
+                            {
+                                @foreach (var transaction in Model.RecentTransactions)
+                                {
+                                    <tr>
+                                        <td>@transaction.MembershipPlan</td>
+                                        <td>@transaction.Amount.ToString("C")</td>
+                                        <td>@transaction.PaymentDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                                        <td><span class="badge badge-fit">@transaction.Status</span></td>
+                                    </tr>
+                                }
                             }
                         </tbody>
                     </table>
@@ -107,4 +170,5 @@
             </div>
         </div>
     </div>
+
 </section>

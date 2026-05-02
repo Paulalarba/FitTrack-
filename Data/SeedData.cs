@@ -1,4 +1,5 @@
 using FitTrack.Models;
+using FitTrack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,6 +38,7 @@ public static class SeedData
                 Email = adminEmail,
                 FullName = "System Administrator",
                 Role = "Admin",
+                QrCodeToken = MemberQrCodeService.GenerateToken(),
                 EmailConfirmed = true
             };
 
@@ -51,6 +53,20 @@ public static class SeedData
             adminUser.Role = "Admin";
             await userManager.UpdateAsync(adminUser);
             await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+
+        var usersMissingQrTokens = await context.Users
+            .Where(u => string.IsNullOrWhiteSpace(u.QrCodeToken))
+            .ToListAsync();
+
+        foreach (var user in usersMissingQrTokens)
+        {
+            user.QrCodeToken = MemberQrCodeService.GenerateToken();
+        }
+
+        if (usersMissingQrTokens.Count > 0)
+        {
+            await context.SaveChangesAsync();
         }
     }
 }

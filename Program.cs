@@ -1,5 +1,6 @@
 using FitTrack.Data;
 using FitTrack.Models;
+using FitTrack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +27,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<MemberQrCodeService>();
 
 var app = builder.Build();
 

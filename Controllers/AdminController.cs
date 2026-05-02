@@ -1,5 +1,6 @@
 using FitTrack.Data;
 using FitTrack.Models;
+using FitTrack.Services;
 using FitTrack.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,9 +14,11 @@ public class AdminController(
     ApplicationDbContext context,
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole> roleManager,
+    MemberQrCodeService qrCodeService,
     IWebHostEnvironment environment) : Controller
 {
     private const int PageSize = 10;
+    private const int ScanCooldownSeconds = 45;
     private static readonly HashSet<string> AllowedQrExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg",
@@ -36,6 +39,93 @@ public class AdminController(
         };
 
         return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult ScanQR() => View();
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> VerifyQrCode([FromBody] QrScanRequest? request)
+    {
+        var now = DateTime.UtcNow;
+
+        if (request is null || !ModelState.IsValid || !qrCodeService.TryReadPayload(request.QrPayload, out var payload))
+        {
+            await LogCheckInAsync(null, now, "Denied", "Invalid or tampered QR code");
+            return Json(new
+            {
+                verified = false,
+                allowEntry = false,
+                status = "Denied",
+                message = "Invalid or tampered QR code."
+            });
+        }
+
+        var qrPayload = payload!;
+        var member = await context.Users.FirstOrDefaultAsync(u => u.Id == qrPayload.MemberId);
+        if (member is null || string.IsNullOrWhiteSpace(member.QrCodeToken) || member.QrCodeToken != qrPayload.Token)
+        {
+            await LogCheckInAsync(member?.Id, now, "Denied", "QR token is invalid or has been regenerated");
+            return Json(new
+            {
+                verified = false,
+                allowEntry = false,
+                status = "Denied",
+                message = "This QR code is no longer valid."
+            });
+        }
+
+        var lastCheckIn = await context.CheckInLogs
+            .Where(c => c.MemberId == member.Id)
+            .OrderByDescending(c => c.CheckInTime)
+            .FirstOrDefaultAsync();
+
+        if (lastCheckIn is not null && lastCheckIn.CheckInTime >= now.AddSeconds(-ScanCooldownSeconds))
+        {
+            return Json(new
+            {
+                verified = true,
+                allowEntry = lastCheckIn.Status == "Allowed",
+                status = "Duplicate",
+                message = $"Already scanned. Please wait {ScanCooldownSeconds} seconds between scans.",
+                member = BuildMemberScanResponse(member),
+                membership = await BuildMembershipScanResponseAsync(member.Id),
+                checkInTime = lastCheckIn.CheckInTime
+            });
+        }
+
+        var membership = await context.Memberships
+            .Where(m => m.UserId == member.Id)
+            .OrderByDescending(m => m.EndDate)
+            .FirstOrDefaultAsync();
+
+        var allowEntry = membership?.IsActive == true;
+        var status = allowEntry ? "Allowed" : "Denied";
+        var reason = allowEntry ? "Membership active" : "Membership expired or inactive";
+
+        var log = new CheckInLog
+        {
+            MemberId = member.Id,
+            CheckInTime = now,
+            Status = status,
+            Reason = reason
+        };
+
+        context.CheckInLogs.Add(log);
+        await context.SaveChangesAsync();
+
+        return Json(new
+        {
+            verified = true,
+            allowEntry,
+            status,
+            message = allowEntry ? $"Welcome, {member.FullName}." : "Membership expired or inactive. Entry denied.",
+            member = BuildMemberScanResponse(member),
+            membership = BuildMembershipScanResponse(membership),
+            checkInTime = log.CheckInTime,
+            previousCheckInTime = lastCheckIn?.CheckInTime
+        });
     }
 
     public async Task<IActionResult> Users(string? searchTerm, int page = 1)
@@ -109,6 +199,7 @@ public class AdminController(
             PhoneNumber = model.PhoneNumber,
             Address = model.Address,
             Role = model.Role,
+            QrCodeToken = MemberQrCodeService.GenerateToken(),
             EmailConfirmed = true
         };
 
@@ -551,5 +642,54 @@ public class AdminController(
         await file.CopyToAsync(stream);
 
         return $"/uploads/payment-accounts/{fileName}";
+    }
+
+    private async Task LogCheckInAsync(string? memberId, DateTime checkInTime, string status, string reason)
+    {
+        context.CheckInLogs.Add(new CheckInLog
+        {
+            MemberId = memberId,
+            CheckInTime = checkInTime,
+            Status = status,
+            Reason = reason
+        });
+
+        await context.SaveChangesAsync();
+    }
+
+    private static object BuildMemberScanResponse(ApplicationUser member)
+    {
+        return new
+        {
+            id = member.Id,
+            fullName = member.FullName,
+            email = member.Email,
+            profilePicture = member.ProfilePicture
+        };
+    }
+
+    private async Task<object?> BuildMembershipScanResponseAsync(string memberId)
+    {
+        var membership = await context.Memberships
+            .Where(m => m.UserId == memberId)
+            .OrderByDescending(m => m.EndDate)
+            .FirstOrDefaultAsync();
+
+        return BuildMembershipScanResponse(membership);
+    }
+
+    private static object? BuildMembershipScanResponse(Membership? membership)
+    {
+        if (membership is null)
+        {
+            return null;
+        }
+
+        return new
+        {
+            planName = membership.PlanName,
+            status = membership.IsActive ? "Active" : "Expired",
+            endDate = membership.EndDate
+        };
     }
 }

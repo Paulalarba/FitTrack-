@@ -1,5 +1,6 @@
 using FitTrack.Data;
 using FitTrack.Models;
+using FitTrack.Services;
 using FitTrack.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,6 +14,7 @@ namespace FitTrack.Controllers;
 public class MemberController(
     ApplicationDbContext context,
     UserManager<ApplicationUser> userManager,
+    MemberQrCodeService qrCodeService,
     ILogger<MemberController> logger) : Controller
 {
     private const int PageSize = 8;
@@ -49,6 +51,63 @@ public class MemberController(
         };
 
         return View(model);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> QR()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        if (await userManager.IsInRoleAsync(user, "Admin"))
+        {
+            return RedirectToAction("Dashboard", "Admin");
+        }
+
+        await EnsureQrCodeTokenAsync(user);
+
+        return View(new MemberQrViewModel
+        {
+            FullName = user.FullName,
+            Email = user.Email,
+            ProfilePicture = user.ProfilePicture,
+            QrPayload = qrCodeService.CreateProtectedPayload(user),
+            CurrentMembership = await context.Memberships
+                .Where(m => m.UserId == user.Id)
+                .OrderByDescending(m => m.EndDate)
+                .FirstOrDefaultAsync(),
+            LastCheckIn = await context.CheckInLogs
+                .Where(c => c.MemberId == user.Id)
+                .OrderByDescending(c => c.CheckInTime)
+                .FirstOrDefaultAsync()
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RegenerateQR()
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return RedirectToAction("Login", "Account");
+        }
+
+        if (await userManager.IsInRoleAsync(user, "Admin"))
+        {
+            return RedirectToAction("Dashboard", "Admin");
+        }
+
+        user.QrCodeToken = MemberQrCodeService.GenerateToken();
+        var result = await userManager.UpdateAsync(user);
+        TempData["StatusMessage"] = result.Succeeded
+            ? "Your QR code has been refreshed."
+            : "We could not refresh your QR code. Please try again.";
+
+        return RedirectToAction(nameof(QR));
     }
 
     public async Task<IActionResult> Transactions(int page = 1)
@@ -342,6 +401,17 @@ public class MemberController(
             .ToListAsync();
 
         return users.FirstOrDefault(u => NormalizePhone(u.PhoneNumber) == normalizedPhone);
+    }
+
+    private async Task EnsureQrCodeTokenAsync(ApplicationUser user)
+    {
+        if (!string.IsNullOrWhiteSpace(user.QrCodeToken))
+        {
+            return;
+        }
+
+        user.QrCodeToken = MemberQrCodeService.GenerateToken();
+        await userManager.UpdateAsync(user);
     }
 
     private static string NormalizePhone(string? phoneNumber)

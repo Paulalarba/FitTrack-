@@ -480,6 +480,80 @@ textarea.form-control-dark {
     background: #fff;
 }
 
+.member-qr-frame {
+    width: min(100%, 320px);
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(150, 245, 76, 0.24);
+}
+
+.member-qr-frame canvas,
+.member-qr-frame img {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.qr-info-tile {
+    min-height: 118px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.qr-info-tile .stat-value {
+    font-size: 1rem;
+    overflow-wrap: anywhere;
+}
+
+.qr-reader-shell {
+    min-height: 360px;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #050706;
+    border: 1px solid rgba(150, 245, 76, 0.18);
+}
+
+.qr-reader-shell video {
+    border-radius: 8px;
+}
+
+.qr-reader-shell img {
+    filter: invert(1);
+}
+
+.qr-result-panel {
+    border-top: 3px solid rgba(255, 255, 255, 0.18);
+}
+
+.qr-result-allowed {
+    border-top-color: #1D9E75;
+}
+
+.qr-result-denied {
+    border-top-color: #E24B4A;
+}
+
+.qr-result-icon {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fit-green);
+    font-size: 1.6rem;
+    flex: 0 0 auto;
+}
+
 .payment-option-card {
     background: rgba(14, 17, 15, 0.8);
     border: 1px solid rgba(150, 245, 76, 0.12);

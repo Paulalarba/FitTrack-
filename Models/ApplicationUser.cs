@@ -18,9 +18,13 @@ public class ApplicationUser : IdentityUser
     [StringLength(200)]
     public string? Address { get; set; }
 
+    [StringLength(128)]
+    public string? QrCodeToken { get; set; }
+
     public DateTime JoinedDate { get; set; } = DateTime.UtcNow;
 
     public ICollection<Transaction> Transactions { get; set; } = [];
     public ICollection<Membership> Memberships { get; set; } = [];
+    public ICollection<CheckInLog> CheckInLogs { get; set; } = [];
     public Wallet? Wallet { get; set; }
 }

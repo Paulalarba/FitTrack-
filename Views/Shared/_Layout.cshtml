@@ -22,7 +22,7 @@
     <div class="flare flare-1"></div>
     <div class="flare flare-2"></div>
 
-    @if (!User.Identity.IsAuthenticated)
+    @if (User.Identity?.IsAuthenticated != true)
     {
         <footer style="background-color: #0e110f; border-top: 1px solid rgba(150, 245, 76, 0.15); padding: 3rem 0 1.5rem;">
             <div class="container">

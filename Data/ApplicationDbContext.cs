@@ -16,6 +16,7 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Wallet> Wallets => Set<Wallet>();
     public DbSet<WalletTransaction> WalletTransactions => Set<WalletTransaction>();
     public DbSet<PaymentAccount> PaymentAccounts => Set<PaymentAccount>();
+    public DbSet<CheckInLog> CheckInLogs => Set<CheckInLog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -67,5 +68,21 @@ public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
 
         builder.Entity<PaymentAccount>()
             .HasIndex(p => p.PaymentType);
+
+        builder.Entity<ApplicationUser>()
+            .HasIndex(u => u.QrCodeToken)
+            .IsUnique();
+
+        builder.Entity<CheckInLog>()
+            .HasOne(c => c.Member)
+            .WithMany(u => u.CheckInLogs)
+            .HasForeignKey(c => c.MemberId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<CheckInLog>()
+            .HasIndex(c => c.MemberId);
+
+        builder.Entity<CheckInLog>()
+            .HasIndex(c => c.CheckInTime);
     }
 }

@@ -127,17 +127,41 @@ a {
 
 .form-control-dark,
 .form-select.form-control-dark {
-    background-color: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--fit-border);
-    color: #fff;
+    /* Increase contrast for inputs, selects and textareas used across admin/member UI */
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #ffffff;
+}
+
+.form-control-dark::placeholder,
+.form-select.form-control-dark::placeholder {
+    color: rgba(255,255,255,0.6);
 }
 
 .form-control-dark:focus,
 .form-select.form-control-dark:focus {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: rgba(255, 255, 255, 0.10);
     border-color: var(--fit-green);
     color: #fff;
-    box-shadow: 0 0 0 0.15rem rgba(150, 245, 76, 0.15);
+    box-shadow: 0 0 0 0.2rem rgba(150, 245, 76, 0.18);
+    outline: none;
+}
+
+/* Make textarea notes more visible and readable */
+textarea.form-control-dark {
+    min-height: 88px;
+    color: #fff;
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.05));
+}
+
+/* Improve select appearance (closed state) for better affordance */
+.form-select.form-control-dark {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    padding-right: 2.5rem; /* room for custom caret if used */
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
 }
 
 .nav-link-custom {
@@ -531,7 +555,58 @@ a {
 .password-toggle:hover {
     color: var(--fit-green); 
 }
-    
+
+/* Improve visibility of native select dropdown options used throughout admin/member UI */
+.form-select.form-control-dark option,
+.form-select.form-control-dark optgroup {
+    background-color: rgba(14, 17, 15, 0.98);
+    color: #ffffff;
+}
+
+.form-select.form-control-dark option:hover,
+.form-select.form-control-dark option:focus,
+.form-select.form-control-dark optgroup option {
+    background-color: rgba(150, 245, 76, 0.08);
+    color: #0b0b0b;
+}
+
+/* Bootstrap dropdown menus (non-native) */
+.dropdown-menu {
+    background-color: rgba(14, 17, 15, 0.98);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #ffffff;
+}
+
+.dropdown-item {
+    color: #ffffff;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: rgba(150, 245, 76, 0.08);
+    color: #0b0b0b;
+}
+
 input[type="password"]::-ms-reveal {
     display: none;
+}
+
+/*Darker, theme-aligned wallet balance box for member transfer page */
+.wallet-balance {
+    background: linear-gradient(180deg, rgba(18,20,18,0.95), rgba(12,14,12,0.9));
+    border: 1px solid rgba(150,245,76,0.10) !important;
+    color: #ffffff;
+    padding: 0.85rem 1rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+
+.wallet-balance .text-fit-green {
+    color: var(--fit-green) !important;
+}
+
+/*Slightly darker input backgrounds for the form to match the panel theme */
+#transferFundsForm .cyber-input,
+#transferFundsForm .form-control-dark {
+    background-color: rgba(255,255,255,0.02);
 }

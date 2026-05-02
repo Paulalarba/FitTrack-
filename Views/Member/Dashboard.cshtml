@@ -94,30 +94,45 @@
     <div class="row g-3 mb-4">
         <div class="col-12"><h2 class="section-title mb-2">Quick Actions</h2></div>
         <div class="col-6 col-md-3">
-            <a asp-action="RequestPayment" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4" style="transition:border 0.2s;">
+            <a asp-action="RequestPayment" class="panel-card quick-action d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4" style="transition:border 0.2s;">
                 <i class="bi bi-credit-card" style="font-size:1.5rem;color:#96f54c;"></i>
                 <span class="small text-white fw-bold">Pay Membership</span>
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a asp-controller="Wallet" asp-action="Index" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
+            <a asp-controller="Wallet" asp-action="Index" class="panel-card quick-action d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
                 <i class="bi bi-wallet2" style="font-size:1.5rem;color:#96f54c;"></i>
                 <span class="small text-white fw-bold">My Wallet</span>
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a asp-action="Transactions" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
+            <a asp-action="Transactions" class="panel-card quick-action d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
                 <i class="bi bi-receipt" style="font-size:1.5rem;color:#96f54c;"></i>
                 <span class="small text-white fw-bold">My Payments</span>
             </a>
         </div>
         <div class="col-6 col-md-3">
-            <a asp-controller="Account" asp-action="Profile" class="panel-card d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
+            <a asp-controller="Account" asp-action="Profile" class="panel-card quick-action d-flex flex-column align-items-center justify-content-center text-center text-decoration-none gap-2 py-4">
                 <i class="bi bi-person-circle" style="font-size:1.5rem;color:#96f54c;"></i>
                 <span class="small text-white fw-bold">Edit Profile</span>
             </a>
         </div>
     </div>
+
+    <style>
+        /* Quick action hover/focus improvements (member dashboard) */
+        .quick-action { transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease; cursor: pointer; }
+        .quick-action:focus { outline: none; }
+        .quick-action:hover, .quick-action:focus {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+            background-color: rgba(150,245,76,0.06);
+            text-decoration: none;
+        }
+        .quick-action:focus { box-shadow: 0 0 0 4px rgba(150,245,76,0.12); }
+        .quick-action .bi { transition: transform .18s ease; }
+        .quick-action:hover .bi, .quick-action:focus .bi { transform: translateY(-3px); }
+    </style>
 
    
     <div class="row g-4">

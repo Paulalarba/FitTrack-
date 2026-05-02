@@ -1,0 +1,252 @@
+@{
+    ViewData["Title"] = "Scan QR";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div>
+            <span class="eyebrow">Access Control</span>
+            <h1 class="page-title mt-2" style="font-size:1.8rem;">QR Scanner</h1>
+            <p class="text-secondary mb-0">Verify members before entry and log each check-in.</p>
+        </div>
+        <a asp-action="Dashboard" class="btn btn-outline-light rounded-pill px-4">Dashboard</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="panel-card h-100">
+                @Html.AntiForgeryToken()
+                <div id="qrReader" class="qr-reader-shell"></div>
+                <div class="d-flex flex-column flex-sm-row gap-2 mt-3">
+                    <button id="startScannerButton" type="button" class="btn btn-fit-green px-4">
+                        <i class="bi bi-camera-video me-2"></i>Start Scanner
+                    </button>
+                    <button id="stopScannerButton" type="button" class="btn btn-outline-light rounded-pill px-4" disabled>
+                        <i class="bi bi-stop-circle me-2"></i>Stop
+                    </button>
+                </div>
+                <div class="mt-4">
+                    <label for="manualQrPayload" class="cyber-label">Manual QR Payload</label>
+                    <div class="input-group">
+                        <input id="manualQrPayload" type="text" class="form-control form-control-dark" placeholder="Paste scanned payload" />
+                        <button id="manualVerifyButton" type="button" class="btn btn-outline-light">Verify</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div id="scanResultPanel" class="panel-card h-100 qr-result-panel">
+                <div class="qr-result-empty text-center py-5">
+                    <i class="bi bi-qr-code-scan d-block mb-3" style="font-size:3rem;color:#96f54c;"></i>
+                    <h2 class="section-title">Ready To Scan</h2>
+                    <p class="text-secondary mb-0">Member details will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        const verifyUrl = '@Url.Action("VerifyQrCode", "Admin")';
+        const antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const readerId = 'qrReader';
+        const startButton = document.getElementById('startScannerButton');
+        const stopButton = document.getElementById('stopScannerButton');
+        const manualInput = document.getElementById('manualQrPayload');
+        const manualButton = document.getElementById('manualVerifyButton');
+        const resultPanel = document.getElementById('scanResultPanel');
+        const qrScanner = new Html5Qrcode(readerId);
+        let scannerRunning = false;
+        let lastPayload = '';
+        let lastScanAt = 0;
+
+        function formatDate(value) {
+            if (!value) {
+                return 'None yet';
+            }
+
+            return new Date(value).toLocaleString([], {
+                year: 'numeric',
+                month: 'short',
+                day: '2-digit',
+                hour: 'numeric',
+                minute: '2-digit'
+            });
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, character => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[character]));
+        }
+
+        function playTone(allowed) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = allowed ? 880 : 220;
+            gain.gain.value = 0.06;
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.14);
+        }
+
+        function renderResult(result) {
+            const isAllowed = result.allowEntry === true;
+            const isDuplicate = result.status === 'Duplicate';
+            const panelClass = isAllowed ? 'qr-result-allowed' : 'qr-result-denied';
+            const icon = isAllowed ? 'bi-check-circle' : 'bi-x-circle';
+            const badge = isAllowed ? 'badge-approved' : 'badge-rejected';
+            const title = isAllowed ? 'Allow Entry' : (isDuplicate ? 'Recently Scanned' : 'Deny Entry');
+            const member = result.member;
+            const membership = result.membership;
+            const profilePicture = escapeHtml(member?.profilePicture);
+
+            resultPanel.className = `panel-card h-100 qr-result-panel ${panelClass}`;
+            resultPanel.innerHTML = `
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    <div class="qr-result-icon"><i class="bi ${icon}"></i></div>
+                    <div>
+                        <span class="eyebrow">${escapeHtml(result.status)}</span>
+                        <h2 class="page-title mt-2 mb-1" style="font-size:1.45rem;">${escapeHtml(title)}</h2>
+                        <p class="text-secondary mb-0">${escapeHtml(result.message)}</p>
+                    </div>
+                </div>
+
+                ${member ? `
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        ${profilePicture
+                            ? `<img src="${profilePicture}" alt="${escapeHtml(member.fullName)}" class="profile-image" style="width:84px;height:84px;">`
+                            : `<div class="profile-image profile-image-placeholder" style="width:84px;height:84px;">FT</div>`}
+                        <div>
+                            <h3 class="mb-1" style="font-size:1.2rem;">${escapeHtml(member.fullName)}</h3>
+                            <p class="text-secondary small mb-0">${escapeHtml(member.email)}</p>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="qr-info-tile">
+                                <span class="stat-label">Membership</span>
+                                <strong class="stat-value"><span class="badge ${badge}">${escapeHtml(membership?.status ?? 'No membership')}</span></strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="qr-info-tile">
+                                <span class="stat-label">Plan</span>
+                                <strong class="stat-value">${escapeHtml(membership?.planName ?? 'No Plan')}</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="qr-info-tile">
+                                <span class="stat-label">Valid Until</span>
+                                <strong class="stat-value">${formatDate(membership?.endDate)}</strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="qr-info-tile">
+                                <span class="stat-label">Last Check-in</span>
+                                <strong class="stat-value">${formatDate(result.checkInTime)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                ` : `
+                    <div class="qr-info-tile">
+                        <span class="stat-label">Result</span>
+                        <strong class="stat-value">${escapeHtml(result.message)}</strong>
+                    </div>
+                `}
+            `;
+        }
+
+        async function verifyPayload(payload) {
+            const trimmedPayload = payload?.trim();
+            if (!trimmedPayload) {
+                return;
+            }
+
+            const now = Date.now();
+            if (trimmedPayload === lastPayload && now - lastScanAt < 2500) {
+                return;
+            }
+
+            lastPayload = trimmedPayload;
+            lastScanAt = now;
+
+            const response = await fetch(verifyUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': antiForgeryToken
+                },
+                body: JSON.stringify({ qrPayload: trimmedPayload })
+            });
+
+            if (!response.ok) {
+                throw new Error('Verification request failed.');
+            }
+
+            const result = await response.json();
+            renderResult(result);
+            playTone(result.allowEntry === true);
+        }
+
+        async function startScanner() {
+            if (scannerRunning) {
+                return;
+            }
+
+            await qrScanner.start(
+                { facingMode: 'environment' },
+                { fps: 10, qrbox: { width: 260, height: 260 } },
+                verifyPayload
+            );
+
+            scannerRunning = true;
+            startButton.disabled = true;
+            stopButton.disabled = false;
+        }
+
+        async function stopScanner() {
+            if (!scannerRunning) {
+                return;
+            }
+
+            await qrScanner.stop();
+            scannerRunning = false;
+            startButton.disabled = false;
+            stopButton.disabled = true;
+        }
+
+        startButton.addEventListener('click', () => {
+            startScanner().catch(error => {
+                resultPanel.innerHTML = `<div class="alert alert-danger mb-0">${error.message}</div>`;
+            });
+        });
+
+        stopButton.addEventListener('click', () => {
+            stopScanner().catch(() => {});
+        });
+
+        manualButton.addEventListener('click', () => {
+            verifyPayload(manualInput.value).catch(error => {
+                resultPanel.innerHTML = `<div class="alert alert-danger mb-0">${error.message}</div>`;
+            });
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (scannerRunning) {
+                qrScanner.stop().catch(() => {});
+            }
+        });
+    </script>
+}

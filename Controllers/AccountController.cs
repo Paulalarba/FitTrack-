@@ -1,4 +1,5 @@
 using FitTrack.Models;
+using FitTrack.Services;
 using FitTrack.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -74,6 +75,7 @@ public class AccountController(
             FullName = model.FullName,
             PhoneNumber = model.PhoneNumber,
             Role = "User",
+            QrCodeToken = MemberQrCodeService.GenerateToken(),
             EmailConfirmed = true
         };
 

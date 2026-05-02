@@ -27,6 +27,7 @@
                     if (role == "Admin")
                     {
                         <a asp-controller="Admin" asp-action="Dashboard" class="nav-link nav-link-custom px-3">Dashboard</a>
+                        <a asp-controller="Admin" asp-action="ScanQR" class="nav-link nav-link-custom px-3">Scan QR</a>
                         <a asp-controller="Admin" asp-action="Users" class="nav-link nav-link-custom px-3">Users</a>
                         <div class="nav-item dropdown">
                             <a class="nav-link nav-link-custom px-3 dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -42,6 +43,7 @@
                     else
                     {
                         <a asp-controller="Member" asp-action="Dashboard" class="nav-link nav-link-custom px-3">Dashboard</a>
+                        <a asp-controller="Member" asp-action="QR" class="nav-link nav-link-custom px-3">My QR</a>
                         <div class="nav-item dropdown">
                             <a class="nav-link nav-link-custom px-3 dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 Payments

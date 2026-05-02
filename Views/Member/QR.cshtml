@@ -1,0 +1,125 @@
+@model MemberQrViewModel
+
+@{
+    ViewData["Title"] = "My QR Code";
+    var membershipStatus = Model.CurrentMembership?.IsActive == true ? "Active" : "Expired";
+    var statusBadge = Model.CurrentMembership?.IsActive == true ? "badge-approved" : "badge-rejected";
+}
+
+<section class="container px-4 px-md-5 py-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
+        <div>
+            <span class="eyebrow">Gym Access</span>
+            <h1 class="page-title mt-2" style="font-size:1.8rem;">My Entry QR</h1>
+            <p class="text-secondary mb-0">Show this code at the entrance for identity and membership verification.</p>
+        </div>
+        <a asp-action="Dashboard" class="btn btn-outline-light rounded-pill px-4">Dashboard</a>
+    </div>
+
+    @if (TempData["StatusMessage"] is string message)
+    {
+        <div class="alert alert-success">@message</div>
+    }
+
+    <div class="row g-4 align-items-stretch">
+        <div class="col-lg-5">
+            <div class="panel-card h-100 text-center">
+                <div class="d-flex align-items-center justify-content-center mb-3">
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfilePicture))
+                    {
+                        <img src="@Model.ProfilePicture" alt="@Model.FullName" class="profile-image" style="width:76px;height:76px;" />
+                    }
+                    else
+                    {
+                        <div class="profile-image profile-image-placeholder" style="width:76px;height:76px;">FT</div>
+                    }
+                </div>
+
+                <h2 class="section-title mb-1">@Model.FullName</h2>
+                <p class="text-secondary small mb-3">@Model.Email</p>
+
+                <div class="member-qr-frame mx-auto mb-3">
+                    <div id="memberQrCode" aria-label="Member QR code"></div>
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+                    <button id="downloadQrButton" type="button" class="btn btn-fit-green px-4">
+                        <i class="bi bi-download me-2"></i>Download
+                    </button>
+                    <form asp-action="RegenerateQR" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-light rounded-pill px-4" onclick="return confirm('Refresh your QR code? The old one will stop working.');">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Refresh
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="panel-card h-100">
+                <h2 class="section-title">Access Status</h2>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="qr-info-tile">
+                            <span class="stat-label">Membership</span>
+                            <strong class="stat-value">
+                                <span class="badge @statusBadge">@membershipStatus</span>
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="qr-info-tile">
+                            <span class="stat-label">Plan</span>
+                            <strong class="stat-value">@(Model.CurrentMembership?.PlanName ?? "No Plan")</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="qr-info-tile">
+                            <span class="stat-label">Valid Until</span>
+                            <strong class="stat-value">@(Model.CurrentMembership?.EndDate.ToLocalTime().ToString("MMM dd, yyyy") ?? "Pending")</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="qr-info-tile">
+                            <span class="stat-label">Last Check-in</span>
+                            <strong class="stat-value">@(Model.LastCheckIn?.CheckInTime.ToLocalTime().ToString("MMM dd, yyyy h:mm tt") ?? "None yet")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        const qrPayload = @Json.Serialize(Model.QrPayload);
+        const qrElement = document.getElementById('memberQrCode');
+
+        new QRCode(qrElement, {
+            text: qrPayload,
+            width: 280,
+            height: 280,
+            colorDark: '#101311',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+
+        document.getElementById('downloadQrButton').addEventListener('click', () => {
+            const canvas = qrElement.querySelector('canvas');
+            const image = qrElement.querySelector('img');
+            const dataUrl = canvas ? canvas.toDataURL('image/png') : image?.src;
+
+            if (!dataUrl) {
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'fittrack-member-qr.png';
+            link.click();
+        });
+    </script>
+}

@@ -23,14 +23,7 @@
         <div>
             <span class="eyebrow">Member Portal</span>
             <h1 class="page-title mt-2" style="font-size:1.8rem;">Welcome, @Model.User.FullName</h1>
-            @if (Model.CurrentMembership == null)
-            {
-                <p class="mb-0 small" style="color:#96f54c;">You haven't started a membership yet — join a plan today!</p>
-            }
-            else
-            {
-                <p class="text-secondary mb-0">Keep your profile and membership details up to date.</p>
-            }
+            
         </div>
         
     </div>
@@ -52,8 +45,8 @@
         <div class="col-md-3">
             <div class="panel-card stat-card @expiryClass">
                 <span class="stat-label">Membership Ends</span>
-                <strong class="stat-value" style="font-size:clamp(1.2rem,3vw,1.8rem);">
-                    @(endDate?.ToString("MMM dd, yyyy") ?? "Pending")
+                <strong class="stat-value">
+                       @(endDate?.ToString("MMM dd, yyyy") ?? "Pending")
                 </strong>
                 @if (daysLeft.HasValue && daysLeft <= 7 && daysLeft >= 0)
                 {

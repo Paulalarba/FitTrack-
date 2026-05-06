@@ -1,3 +1,25 @@
+// ============================================================
+// AdminController.cs — Admin Panel Controller
+// ============================================================
+// Handles all administrative functionality behind [Authorize(Roles = "Admin")].
+// Only users in the "Admin" role can access any action in this controller.
+//
+// Features covered:
+//   Dashboard        — Summary stats: total users, transactions, active memberships.
+//   ScanQR           — QR scanner page for gym entrance check-in.
+//   VerifyQrCode     — AJAX endpoint that decrypts, validates a QR, and logs the scan.
+//   Users            — Paginated, searchable list of all member accounts.
+//   CreateUser       — Admin creates a new user account directly.
+//   EditUser         — Admin edits an existing user's info and role.
+//   DeleteUser       — Admin deletes a user and their related records.
+//   Transactions     — Paginated, filterable list of all membership payments.
+//   UpdateTransactionStatus — Approve or reject a payment; activates/rejects membership.
+//   WalletRequests   — List of pending wallet deposit requests.
+//   ApproveDeposit   — Credits a member's wallet and marks the deposit approved.
+//   RejectDeposit    — Marks a deposit rejected without changing the wallet balance.
+//   PaymentAccounts  — CRUD for GCash/bank QR code payment accounts shown to members.
+// ============================================================
+
 using FitTrack.Data;
 using FitTrack.Models;
 using FitTrack.Services;
@@ -9,16 +31,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FitTrack.Controllers;
 
+/// <summary>
+/// Admin-only controller. Every action is protected by [Authorize(Roles = "Admin")].
+/// Injected services are received via C# 12 primary constructor syntax.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class AdminController(
-    ApplicationDbContext context,
-    UserManager<ApplicationUser> userManager,
-    RoleManager<IdentityRole> roleManager,
-    MemberQrCodeService qrCodeService,
-    IWebHostEnvironment environment) : Controller
+    ApplicationDbContext context,         // EF Core DB context for all database queries.
+    UserManager<ApplicationUser> userManager,  // Identity service for user CRUD & role checks.
+    RoleManager<IdentityRole> roleManager,     // Identity service for creating/checking roles.
+    MemberQrCodeService qrCodeService,         // Decrypts and validates member QR payloads.
+    IWebHostEnvironment environment) : Controller  // Provides wwwroot path for file uploads.
 {
+    // Number of rows per page on the Users and Transactions list views.
     private const int PageSize = 10;
+
+    // After a QR scan, the same code cannot trigger another log entry for this many seconds.
+    // Prevents double-counting when the scanner reads the code twice in quick succession.
     private const int ScanCooldownSeconds = 45;
+
+    // Only these image formats are accepted for payment account QR code uploads.
     private static readonly HashSet<string> AllowedQrExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg",
@@ -27,23 +59,49 @@ public class AdminController(
         ".webp"
     };
 
+    /// <summary>
+    /// GET /Admin/Dashboard
+    /// Loads summary statistics for the admin overview page:
+    ///   - Total registered users, total transactions, currently active memberships.
+    ///   - 5 most recently joined users and 5 most recent payment transactions.
+    /// All counts are executed as separate async DB queries and assembled into one ViewModel.
+    /// </summary>
     public async Task<IActionResult> Dashboard()
     {
         var model = new AdminDashboardViewModel
         {
             TotalUsers = await context.Users.CountAsync(),
             TotalTransactions = await context.Transactions.CountAsync(),
+            // Count memberships where Status=Active AND EndDate is today or future.
             ActiveMemberships = await context.Memberships.CountAsync(m => m.Status == "Active" && m.EndDate >= DateTime.UtcNow.Date),
             RecentUsers = await context.Users.OrderByDescending(u => u.JoinedDate).Take(5).ToListAsync(),
+            // Include the related User so the view can show member names next to transaction amounts.
             RecentTransactions = await context.Transactions.Include(t => t.User).OrderByDescending(t => t.PaymentDate).Take(5).ToListAsync()
         };
 
         return View(model);
     }
 
+    /// <summary>
+    /// GET /Admin/ScanQR
+    /// Renders the QR scanner page. The actual scanning logic runs in the browser
+    /// (JS reads the camera), then posts the encoded string to VerifyQrCode.
+    /// </summary>
     [HttpGet]
     public IActionResult ScanQR() => View();
 
+    /// <summary>
+    /// POST /Admin/VerifyQrCode  (JSON body: { qrPayload: "..." })
+    /// AJAX endpoint called by the QR scanner page after reading a member's code.
+    ///
+    /// Full check-in flow:
+    ///   1. Decrypt the QR payload using MemberQrCodeService. Deny if tampered.
+    ///   2. Look up the member by ID; verify the token still matches the DB record.
+    ///   3. Check the 45-second cooldown window to prevent duplicate scan logs.
+    ///   4. Check the member's most recent Membership record for IsActive status.
+    ///   5. Write a CheckInLog row (Allowed or Denied).
+    ///   6. Return a JSON object the front-end uses to display the scan result card.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> VerifyQrCode([FromBody] QrScanRequest? request)
@@ -128,6 +186,13 @@ public class AdminController(
         });
     }
 
+    /// <summary>
+    /// GET /Admin/Users?searchTerm=X&amp;page=N
+    /// Paginated, searchable list of ALL registered users.
+    /// Search matches against full name, email address, or user ID.
+    /// Each row in the result includes the user's latest membership status
+    /// (fetched as a correlated sub-query inside the EF Core Select projection).
+    /// </summary>
     public async Task<IActionResult> Users(string? searchTerm, int page = 1)
     {
         var query = context.Users.AsQueryable();
@@ -142,7 +207,7 @@ public class AdminController(
         var totalCount = await query.CountAsync();
         var users = await query
             .OrderByDescending(u => u.JoinedDate)
-            .Skip((page - 1) * PageSize)
+            .Skip((page - 1) * PageSize) // Skip all rows from previous pages.
             .Take(PageSize)
             .Select(u => new AdminUserListItemViewModel
             {
@@ -151,6 +216,7 @@ public class AdminController(
                 Email = u.Email ?? string.Empty,
                 Role = u.Role,
                 JoinedDate = u.JoinedDate,
+                // Inline sub-query: get the most recent membership status for each user.
                 MembershipStatus = context.Memberships
                     .Where(m => m.UserId == u.Id)
                     .OrderByDescending(m => m.EndDate)
@@ -168,9 +234,15 @@ public class AdminController(
         });
     }
 
+    /// <summary>GET /Admin/CreateUser — Shows blank user creation form.</summary>
     [HttpGet]
     public IActionResult CreateUser() => View(new ManageUserViewModel());
 
+    /// <summary>
+    /// POST /Admin/CreateUser — Admin creates a new user with any role.
+    /// Password is required here (unlike EditUser where it is optional).
+    /// A QR token is generated immediately. EmailConfirmed=true skips verification.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateUser(ManageUserViewModel model)
@@ -219,6 +291,7 @@ public class AdminController(
         return RedirectToAction(nameof(Users));
     }
 
+    /// <summary>GET /Admin/EditUser?id=X — Loads existing user data into the edit form.</summary>
     [HttpGet]
     public async Task<IActionResult> EditUser(string id)
     {
@@ -239,6 +312,13 @@ public class AdminController(
         });
     }
 
+    /// <summary>
+    /// POST /Admin/EditUser — Saves edits to an existing user.
+    /// Role change: removes all existing roles then adds the new one.
+    /// Password change: uses GeneratePasswordResetToken + ResetPasswordAsync
+    ///   (the safe Identity pattern) rather than setting the hash directly.
+    /// Password field is optional; leaving it blank keeps the current password.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditUser(ManageUserViewModel model)
@@ -304,6 +384,12 @@ public class AdminController(
         return RedirectToAction(nameof(Users));
     }
 
+    /// <summary>
+    /// POST /Admin/DeleteUser?id=X
+    /// Deletes a user and their memberships + transactions.
+    /// The seeded admin (admin@fittrack.local) is protected from deletion.
+    /// Note: wallets and wallet transactions cascade-delete via the DB foreign key.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteUser(string id)
@@ -331,6 +417,12 @@ public class AdminController(
         return RedirectToAction(nameof(Users));
     }
 
+    /// <summary>
+    /// GET /Admin/Transactions?searchTerm=X&amp;statusFilter=Y&amp;page=N
+    /// Paginated list of ALL membership payment transactions across all members.
+    /// Supports search by plan name, transaction ID, member name, or email.
+    /// Supports filtering by status: Pending, Approved, or Rejected.
+    /// </summary>
     public async Task<IActionResult> Transactions(string? searchTerm, string? statusFilter, int page = 1)
     {
         var query = context.Transactions.Include(t => t.User).AsQueryable();
@@ -365,6 +457,12 @@ public class AdminController(
         });
     }
 
+    /// <summary>
+    /// GET /Admin/WalletRequests
+    /// Lists all wallet deposit requests that are still in "Pending" status.
+    /// Oldest requests are shown first (FIFO) so admins process them in order.
+    /// Includes the wallet and its owner (User) via eager loading.
+    /// </summary>
     public async Task<IActionResult> WalletRequests()
     {
         var requests = await context.WalletTransactions
@@ -377,6 +475,12 @@ public class AdminController(
         return View(requests);
     }
 
+    /// <summary>
+    /// POST /Admin/ApproveDeposit?id=X
+    /// Approves a pending wallet deposit: marks it Approved AND adds the amount
+    /// to the wallet balance in a single SaveChanges call.
+    /// Idempotency guard: already-processed requests are rejected with a message.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ApproveDeposit(int id)
@@ -404,6 +508,11 @@ public class AdminController(
         return RedirectToAction(nameof(WalletRequests));
     }
 
+    /// <summary>
+    /// POST /Admin/RejectDeposit?id=X
+    /// Rejects a pending wallet deposit. The wallet balance is NOT changed.
+    /// Only the Status field is updated to "Rejected".
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RejectDeposit(int id)
@@ -542,6 +651,16 @@ public class AdminController(
         return RedirectToAction(nameof(PaymentAccounts));
     }
 
+    /// <summary>
+    /// POST /Admin/UpdateTransactionStatus?id=X&amp;status=Y
+    /// Approve or reject a membership payment transaction.
+    ///
+    /// If Approved:
+    ///   - Duration: Annual plan = +1 year, all others = +1 month.
+    ///   - Creates a new Membership or updates the existing one to "Active".
+    /// If Rejected:
+    ///   - Updates the linked Membership (if still Pending) to "Rejected".
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> UpdateTransactionStatus(int id, string status)
@@ -606,6 +725,12 @@ public class AdminController(
         return RedirectToAction(nameof(Transactions));
     }
 
+    /// <summary>
+    /// Validates an uploaded QR code image file.
+    /// requireFile=true is used on CreatePaymentAccount (image is mandatory).
+    /// requireFile=false is used on EditPaymentAccount (image is optional; keep existing).
+    /// Adds ModelState errors for missing file, wrong extension, or oversized file (>5 MB).
+    /// </summary>
     private void ValidateQrCode(IFormFile? file, bool requireFile)
     {
         if (file is null)
@@ -630,6 +755,10 @@ public class AdminController(
         }
     }
 
+    /// <summary>
+    /// Saves an uploaded QR code image to wwwroot/uploads/payment-accounts/.
+    /// Uses a GUID filename to prevent collisions and returns the web-accessible path.
+    /// </summary>
     private async Task<string> SaveQrCodeAsync(IFormFile file)
     {
         var uploadsPath = Path.Combine(environment.WebRootPath, "uploads", "payment-accounts");
@@ -644,6 +773,11 @@ public class AdminController(
         return $"/uploads/payment-accounts/{fileName}";
     }
 
+    /// <summary>
+    /// Inserts a CheckInLog row for an invalid or denied QR scan.
+    /// Called before returning early from VerifyQrCode when the payload is bad.
+    /// memberId may be null when the QR code cannot be decoded at all.
+    /// </summary>
     private async Task LogCheckInAsync(string? memberId, DateTime checkInTime, string status, string reason)
     {
         context.CheckInLogs.Add(new CheckInLog
@@ -657,6 +791,10 @@ public class AdminController(
         await context.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Builds the anonymous JSON object returned to the scanner front-end
+    /// with the member's basic profile info (id, name, email, picture URL).
+    /// </summary>
     private static object BuildMemberScanResponse(ApplicationUser member)
     {
         return new
@@ -668,6 +806,7 @@ public class AdminController(
         };
     }
 
+    /// <summary>Async overload: fetches the latest membership from DB then delegates to the sync overload.</summary>
     private async Task<object?> BuildMembershipScanResponseAsync(string memberId)
     {
         var membership = await context.Memberships
@@ -678,6 +817,11 @@ public class AdminController(
         return BuildMembershipScanResponse(membership);
     }
 
+    /// <summary>
+    /// Builds the anonymous JSON object for the membership portion of the scan result.
+    /// Returns null if the member has no membership record.
+    /// Reports "Active" or "Expired" based on the computed IsActive property.
+    /// </summary>
     private static object? BuildMembershipScanResponse(Membership? membership)
     {
         if (membership is null)

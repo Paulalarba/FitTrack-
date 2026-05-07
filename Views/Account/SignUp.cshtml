@@ -35,15 +35,21 @@
             </div>
 
             <div class="col-md-6">
-                <label asp-for="Password" class="cyber-label"></label>
-                <input asp-for="Password" class="cyber-input" autocomplete="new-password" />
-                <span asp-validation-for="Password" class="text-danger small"></span>
+                <div class="cyber-group text-start position-relative">
+                    <label asp-for="Password" class="cyber-label"></label>
+                    <input asp-for="Password" type="password" class="cyber-input pe-5" id="passwordInput" autocomplete="new-password" />
+                    <i class="bi bi-eye-slash password-toggle" id="togglePassword"></i>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
             </div>
 
             <div class="col-md-6">
-                <label asp-for="ConfirmPassword" class="cyber-label"></label>
-                <input asp-for="ConfirmPassword" class="cyber-input" autocomplete="new-password" />
-                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                <div class="cyber-group text-start position-relative">
+                    <label asp-for="ConfirmPassword" class="cyber-label"></label>
+                    <input asp-for="ConfirmPassword" type="password" class="cyber-input pe-5" id="confirmPasswordInput" autocomplete="new-password" />
+                    <i class="bi bi-eye-slash password-toggle" id="toggleConfirmPassword"></i>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                </div>
             </div>
 
             <button id="registerBtn" class="btn-fit-green w-100" type="submit"

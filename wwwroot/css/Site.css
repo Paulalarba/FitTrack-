@@ -638,13 +638,15 @@ textarea.form-control-dark {
 
 .password-toggle {
     position: absolute;
-    right: 0;
+    right: 14px;
+    bottom: 20px;
     top: 50%;
     transform: translateY(-50%);
     cursor: pointer;
     color: var(--text-muted);
     font-size: 1.2rem;
     transition: color 0.2s ease;
+    z-index: 10;
 }
 
 .password-toggle:hover {

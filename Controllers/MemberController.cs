@@ -49,7 +49,7 @@ public class MemberController(
     /// Loads and displays the member's personal dashboard:
     ///   - Their active/latest membership status and plan name.
     ///   - Their current wallet balance.
-    ///   - The 5 most recent membership payment transactions.
+    ///   - The 5 most recent unified transactions (membership, deposits, transfers).
     ///
     /// Admins who navigate here directly are redirected to Admin/Dashboard
     /// because member views are not designed for admin use.
@@ -68,25 +68,65 @@ public class MemberController(
             return RedirectToAction("Dashboard", "Admin");
         }
 
+        // 1. Fetch Membership Transactions
+        var membershipTransactions = await context.Transactions
+            .Where(t => t.UserId == user.Id)
+            .OrderByDescending(t => t.PaymentDate)
+            .Take(5)
+            .Select(t => new MemberTransactionItem
+            {
+                Type = "Membership",
+                Amount = t.Amount,
+                Date = t.PaymentDate,
+                Status = t.Status,
+                Description = t.MembershipPlan,
+                Reference = t.Notes,
+                IsDebit = true
+            })
+            .ToListAsync();
+
+        // 2. Fetch Wallet Transactions
+        var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == user.Id);
+        var walletTransactions = new List<MemberTransactionItem>();
+
+        if (wallet is not null)
+        {
+            walletTransactions = await context.WalletTransactions
+                .Where(t => t.WalletId == wallet.Id && t.PaymentMethod != "Wallet")
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(5)
+                .Select(t => new MemberTransactionItem
+                {
+                    Type = t.PaymentMethod == "Wallet Transfer" ? "Transfer" : "Deposit",
+                    Amount = t.Amount,
+                    Date = t.CreatedAt,
+                    Status = t.Status,
+                    Description = t.Type == "Credit" ? "Funds Added" : "Funds Transferred",
+                    Reference = t.ReferenceNumber,
+                    IsDebit = t.Type == "Debit"
+                })
+                .ToListAsync();
+        }
+
+        // 3. Merge, Sort and Take Top 5
+        var recentTransactions = membershipTransactions
+            .Concat(walletTransactions)
+            .OrderByDescending(t => t.Date)
+            .Take(5)
+            .ToList();
+
         var model = new MemberDashboardViewModel
         {
             User = user,
-            // Get the most recent membership record (the one with the latest EndDate).
             CurrentMembership = await context.Memberships
                 .Where(m => m.UserId == user.Id)
                 .OrderByDescending(m => m.EndDate)
                 .FirstOrDefaultAsync(),
-            // Cast to decimal? so FirstOrDefaultAsync returns null instead of 0 for missing wallet.
             WalletBalance = await context.Wallets
                 .Where(w => w.UserId == user.Id)
                 .Select(w => (decimal?)w.Balance)
                 .FirstOrDefaultAsync() ?? 0M,
-            // Show the 5 most recent membership payments for a quick history overview.
-            RecentTransactions = await context.Transactions
-                .Where(t => t.UserId == user.Id)
-                .OrderByDescending(t => t.PaymentDate)
-                .Take(5)
-                .ToListAsync()
+            RecentTransactions = recentTransactions
         };
 
         return View(model);
@@ -181,12 +221,13 @@ public class MemberController(
 
     /// <summary>
     /// GET /Member/Transactions?page=N
-    /// Displays a paginated list of the current member's membership payment transactions.
+    /// Displays a paginated, unified list of the current member's transaction history.
+    /// This includes:
+    ///   - Membership payments (from Transactions table)
+    ///   - Wallet deposits and transfers (from WalletTransactions table)
     ///
-    /// Pagination:
-    ///   - PageSize = 8 rows per page.
-    ///   - TotalPages is calculated from the total count and passed to the view
-    ///     so the Razor view can render "Previous / Next" navigation.
+    /// To avoid duplication, WalletTransactions with PaymentMethod "Wallet" are excluded
+    /// because they are already represented by a record in the Transactions table.
     /// </summary>
     public async Task<IActionResult> Transactions(int page = 1)
     {
@@ -196,20 +237,59 @@ public class MemberController(
             return RedirectToAction("Login", "Account");
         }
 
-        // Only fetch transactions belonging to this specific member.
-        var query = context.Transactions.Where(t => t.UserId == user.Id);
-        var totalCount = await query.CountAsync();
+        // 1. Fetch Membership Transactions
+        var membershipTransactions = await context.Transactions
+            .Where(t => t.UserId == user.Id)
+            .Select(t => new MemberTransactionItem
+            {
+                Type = "Membership",
+                Amount = t.Amount,
+                Date = t.PaymentDate,
+                Status = t.Status,
+                Description = t.MembershipPlan,
+                Reference = t.Notes,
+                IsDebit = true
+            })
+            .ToListAsync();
 
-        // Skip past all rows from previous pages, then take only one page's worth.
-        var transactions = await query
-            .OrderByDescending(t => t.PaymentDate)
+        // 2. Fetch Wallet Transactions (excluding internal wallet-based membership payments)
+        var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == user.Id);
+        var walletTransactions = new List<MemberTransactionItem>();
+
+        if (wallet is not null)
+        {
+            walletTransactions = await context.WalletTransactions
+                .Where(t => t.WalletId == wallet.Id && t.PaymentMethod != "Wallet")
+                .Select(t => new MemberTransactionItem
+                {
+                    Type = t.PaymentMethod == "Wallet Transfer" ? "Transfer" : "Deposit",
+                    Amount = t.Amount,
+                    Date = t.CreatedAt,
+                    Status = t.Status,
+                    Description = t.Type == "Credit" ? "Funds Added" : "Funds Transferred",
+                    Reference = t.ReferenceNumber,
+                    IsDebit = t.Type == "Debit"
+                })
+                .ToListAsync();
+        }
+
+        // 3. Merge and Sort
+        var allTransactions = membershipTransactions
+            .Concat(walletTransactions)
+            .OrderByDescending(t => t.Date)
+            .ToList();
+
+        var totalCount = allTransactions.Count;
+
+        // 4. Paginate the merged list
+        var pagedTransactions = allTransactions
             .Skip((page - 1) * PageSize)
             .Take(PageSize)
-            .ToListAsync();
+            .ToList();
 
         return View(new MemberTransactionsViewModel
         {
-            Transactions = transactions,
+            Transactions = pagedTransactions,
             Page = page,
             TotalPages = (int)Math.Ceiling(totalCount / (double)PageSize)
         });

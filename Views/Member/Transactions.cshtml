@@ -7,11 +7,14 @@
 <section class="container px-4 px-md-5 py-5">
     <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4">
         <div>
-            <span class="eyebrow">Billing History</span>
-            <h1 class="page-title mt-3">My Transactions</h1>
-            <p class="text-secondary mb-0">Review your wallet-paid membership billing history.</p>
+            <span class="eyebrow">Financial History</span>
+            <h1 class="page-title mt-3">All Transactions</h1>
+            <p class="text-secondary mb-0">Review your membership payments, wallet deposits, and transfers.</p>
         </div>
-        <a asp-action="RequestPayment" class="btn btn-fit-green">Pay Membership</a>
+        <div class="d-flex gap-3">
+            <a asp-controller="Wallet" asp-action="Deposit" class="btn-edit-profile">Deposit Funds</a>
+            <a asp-action="RequestPayment" class="btn btn-fit-green">Pay Membership</a>
+        </div>
     </div>
 
     @if (TempData["StatusMessage"] is string message)
@@ -24,43 +27,76 @@
             <table class="table table-dark align-middle">
                 <thead>
                     <tr>
-                        <th>Plan</th>
+                        <th>Type</th>
+                        <th>Description</th>
                         <th>Amount</th>
                         <th>Date</th>
                         <th>Status</th>
-                        <th>Notes</th>
+                        <th>Reference/Notes</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var transaction in Model.Transactions)
+                    @if (Model.Transactions.Count == 0)
                     {
                         <tr>
-                            <td>@transaction.MembershipPlan</td>
-                            <td>@transaction.Amount.ToString("C")</td>
-                            <td>@transaction.PaymentDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
-                            <td>
-                                @{
-                                    var badgeClass = transaction.Status switch
-                                    {
-                                        "Approved" => "badge-approved",
-                                        "Rejected" => "badge-rejected",
-                                        _ => "badge-pending"
-                                    };
-                                }
-                                <span class="badge @badgeClass">@transaction.Status</span>
-                            </td>
-                            <td>@(string.IsNullOrWhiteSpace(transaction.Notes) ? "-" : transaction.Notes)</td>
+                            <td colspan="6" class="text-secondary text-center py-4">No transactions found.</td>
                         </tr>
+                    }
+                    else
+                    {
+                        @foreach (var transaction in Model.Transactions)
+                        {
+                            <tr>
+                                <td>
+                                    @{
+                                        var typeClass = transaction.Type switch
+                                        {
+                                            "Membership" => "text-info",
+                                            "Deposit" => "text-success",
+                                            "Transfer" => "text-warning",
+                                            _ => "text-light"
+                                        };
+                                    }
+                                    <span class="fw-bold @typeClass">@transaction.Type</span>
+                                </td>
+                                <td>@transaction.Description</td>
+                                <td>
+                                    <span class="@(transaction.IsDebit ? "text-danger" : "text-success")">
+                                        @(transaction.IsDebit ? "-" : "+")@transaction.Amount.ToString("C")
+                                    </span>
+                                </td>
+                                <td>@transaction.Date.ToLocalTime().ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    @{
+                                        var badgeClass = transaction.Status switch
+                                        {
+                                            "Approved" => "badge-approved",
+                                            "Rejected" => "badge-rejected",
+                                            _ => "badge-pending"
+                                        };
+                                    }
+                                    <span class="badge @badgeClass">@transaction.Status</span>
+                                </td>
+                                <td>
+                                    <small class="text-secondary">
+                                        @(string.IsNullOrWhiteSpace(transaction.Reference) ? "-" : transaction.Reference)
+                                    </small>
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
         </div>
 
-        <div class="pagination-fit mt-4">
-            @for (var i = 1; i <= Model.TotalPages; i++)
-            {
-                <a asp-action="Transactions" asp-route-page="@i" class="@(Model.Page == i ? "active" : string.Empty)">@i</a>
-            }
-        </div>
+        @if (Model.TotalPages > 1)
+        {
+            <div class="pagination-fit mt-4">
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <a asp-action="Transactions" asp-route-page="@i" class="@(Model.Page == i ? "active" : string.Empty)">@i</a>
+                }
+            </div>
+        }
     </div>
 </section>

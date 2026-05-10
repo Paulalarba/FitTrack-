@@ -61,21 +61,28 @@ public class AdminController(
 
     /// <summary>
     /// GET /Admin/Dashboard
-    /// Loads summary statistics for the admin overview page:
+    /// Loads summary statistics and notification counts for the admin overview page:
     ///   - Total registered users, total transactions, currently active memberships.
+    ///   - Counts of items requiring attention (pending payments, wallet requests).
+    ///   - Count of new users who registered in the last 24 hours.
     ///   - 5 most recently joined users and 5 most recent payment transactions.
-    /// All counts are executed as separate async DB queries and assembled into one ViewModel.
     /// </summary>
     public async Task<IActionResult> Dashboard()
     {
+        var today = DateTime.UtcNow.Date;
+
         var model = new AdminDashboardViewModel
         {
             TotalUsers = await context.Users.CountAsync(),
             TotalTransactions = await context.Transactions.CountAsync(),
-            // Count memberships where Status=Active AND EndDate is today or future.
-            ActiveMemberships = await context.Memberships.CountAsync(m => m.Status == "Active" && m.EndDate >= DateTime.UtcNow.Date),
+            ActiveMemberships = await context.Memberships.CountAsync(m => m.Status == "Active" && m.EndDate >= today),
+            
+            // Notification Widget Data
+            PendingPaymentsCount = await context.Transactions.CountAsync(t => t.Status == "Pending"),
+            PendingWalletRequestsCount = await context.WalletTransactions.CountAsync(t => t.Type == "Credit" && t.Status == "Pending"),
+            NewUsersTodayCount = await context.Users.CountAsync(u => u.JoinedDate >= today),
+
             RecentUsers = await context.Users.OrderByDescending(u => u.JoinedDate).Take(5).ToListAsync(),
-            // Include the related User so the view can show member names next to transaction amounts.
             RecentTransactions = await context.Transactions.Include(t => t.User).OrderByDescending(t => t.PaymentDate).Take(5).ToListAsync()
         };
 

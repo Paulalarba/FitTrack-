@@ -1,79 +1,96 @@
 # FitTrack - Gym Membership & Wallet Management System
 
-FitTrack is a comprehensive web application built with ASP.NET Core MVC. It is designed to manage gym memberships, user profiles, and incorporates a robust digital wallet system for seamless financial transactions. 
+FitTrack is a modern, high-performance web application built with **ASP.NET Core 10.0 MVC**. It is designed to streamline gym operations, from secure member check-ins using tamper-proof QR codes to a robust digital wallet system for seamless financial transactions.
 
 ## 🌟 Key Features
 
-### User Management & Authentication
-* **Secure Authentication**: Registration and login powered by ASP.NET Core Identity.
-* **Role-Based Access Control (RBAC)**: Distinct, isolated portals and permissions for Administrators and Members.
-* **Profile Management**: Users can update their personal details and account settings directly from their dashboard.
+### 🛡️ Secure QR Check-in System
+*   **Tamper-Proof QR Codes**: Utilizes the ASP.NET Core Data Protection API to generate encrypted, time-sensitive, and verifiable check-in payloads.
+*   **Instant Invalidation**: Members can regenerate their QR tokens instantly, which immediately invalidates any previously generated or scanned codes.
+*   **Admin Scanner**: A dedicated scanning interface for gym staff to verify member identity and membership status in real-time.
 
-### Administrator Operations
-* **Centralized Dashboard**: A comprehensive overview of system statistics, active users, and financial summaries.
-* **User Administration**: Capabilities to view, edit, manage, and remove member accounts from the system.
-* **Transaction Oversight**: Full visibility into all system-wide financial movements, deposits, and payments.
-* **Request Approvals**: Ability to review and approve or reject manual payment requests for memberships.
+### 💳 Integrated Digital Wallet System
+*   **Secure Ledger**: Every user is assigned a digital wallet with a detailed transaction history.
+*   **Flexible Funding**: Support for manual deposit requests with image-based proof of payment.
+*   **Peer-to-Peer Transfers**: Securely transfer funds to other users within the platform using their unique identifiers.
+*   **Membership Automation**: Pay for and renew membership tiers directly using wallet balances.
 
-### Member Experience
-* **Personalized Dashboard**: At-a-glance view of active membership status, wallet balance, and recent activities.
-* **Tiered Memberships**: Select and upgrade between different membership tiers (e.g., Classic, Premium/Black Card) with dynamic pricing validation.
-* **Activity Tracking**: Detailed, personalized ledger of all deposits, transfers, and membership payments.
+### 👥 User & Admin Portals
+*   **Role-Based Access Control (RBAC)**: Distinct portals for Administrators and Members powered by ASP.NET Core Identity.
+*   **Tiered Memberships**: Support for multiple membership levels (e.g., Classic, Premium) with dynamic pricing and duration logic.
+*   **Profile Customization**: Image upload support for profile pictures and comprehensive account management.
 
-### Integrated Digital Wallet System
-* **Wallet Balances**: Every user is assigned a digital wallet upon registration.
-* **Fund Deposits**: Seamlessly deposit funds into the digital wallet for future use.
-* **Peer-to-Peer Transfers**: Transfer funds securely to other users within the platform.
-* **Membership Payments**: Directly utilize the wallet balance to seamlessly pay for active gym memberships.
+### 📊 Administrative Tools
+*   **Centralized Dashboard**: Real-time overview of active memberships, system-wide financial health, and check-in logs.
+*   **Request Management**: A workflow-driven system for approving or rejecting wallet deposit requests.
+*   **Full Audit Trail**: Searchable logs for all transactions and gym entries.
 
 ## 🛠️ Technology Stack
-* **Framework**: ASP.NET Core MVC (C#)
-* **Database**: Microsoft SQL Server
-* **ORM**: Entity Framework Core
-* **Security**: ASP.NET Core Identity
-* **Frontend**: HTML5, Vanilla CSS (with modern, responsive UI design), JavaScript, Razor Views
 
-## 🚀 How to Run the Project locally
+*   **Framework**: [ASP.NET Core 10.0 MVC](https://dotnet.microsoft.com/en-us/apps/aspnet)
+*   **Database**: [PostgreSQL](https://www.postgresql.org/) (Optimized for Supabase)
+*   **ORM**: [Entity Framework Core 10.0](https://learn.microsoft.com/en-us/ef/core/)
+*   **Security**: ASP.NET Core Identity & Data Protection API
+*   **Frontend**: Razor Views, Vanilla CSS (with CSS Isolation), Modern JavaScript
+*   **Deployment**: Ready for Azure Web Apps (via GitHub Actions)
+
+## 🔐 Technical Deep Dive: QR Security
+
+The QR check-in system is designed with a "Zero-Trust" approach:
+1.  **Payload Protection**: Member ID and a unique `QrCodeToken` are serialized to JSON and encrypted using **AES-256-CBC + HMAC** via the ASP.NET Data Protection API.
+2.  **Unpredictable Tokens**: Tokens are generated using `RandomNumberGenerator.GetBytes(32)`, providing 256 bits of entropy.
+3.  **Encapsulation**: The QR code never contains raw user data; it only contains an opaque, encrypted string that can only be decrypted by the FitTrack server.
+
+## 🚀 Getting Started
 
 ### Prerequisites
-* [.NET SDK](https://dotnet.microsoft.com/download) (Version 8.0 or newer)
-* [SQL Server](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) (Express, LocalDB, or Developer edition)
-* IDE: Visual Studio 2022, JetBrains Rider, or Visual Studio Code
+*   [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
+*   [PostgreSQL](https://www.postgresql.org/download/) (Local instance or Supabase)
+*   IDE: Visual Studio 2022 (v17.11+), JetBrains Rider, or VS Code
 
-### Installation Steps
+### Local Setup
 
-1. **Navigate to the project directory**:
-   Ensure you are in the root folder containing the `FitTrack.sln` or `FitTrack.csproj` file.
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/yourusername/FitTrack.git
+    cd FitTrack
+    ```
 
-2. **Configure the Database Connection**: 
-   Open `appsettings.json` and verify the `DefaultConnection` string accurately points to your local SQL Server instance.
-   ```json
-   "ConnectionStrings": {
-     "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=FitTrackDB;Trusted_Connection=True;MultipleActiveResultSets=true"
-   }
-   ```
+2.  **Configure Database**:
+    We recommend using [User Secrets](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets) to store your connection string:
+    ```bash
+    dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=your_host;Database=FitTrackDB;Username=your_user;Password=your_password"
+    ```
 
-3. **Apply Database Migrations**:
-   Open your terminal in the project root and execute the Entity Framework migrations to create your database schema:
-   ```bash
-   dotnet ef database update
-   ```
-   *Note: If using Visual Studio, you can run `Update-Database` in the Package Manager Console.*
+3.  **Initialize Database**:
+    Apply the Entity Framework migrations to set up your PostgreSQL schema:
+    ```bash
+    dotnet ef database update
+    ```
 
-4. **Run the Application**:
-   Execute the following command in your terminal:
-   ```bash
-   dotnet run
-   ```
-   Alternatively, press `F5` in Visual Studio to start debugging.
+4.  **Launch the App**:
+    ```bash
+    dotnet run
+    ```
+    The application will automatically seed the database with initial roles and a default administrator account on the first run.
 
-5. **Initial Setup & Seeding**:
-   Upon the application's first launch, the `SeedData` logic in `Program.cs` will automatically create the necessary Roles (Admin, Member) and provision a default Administrator account if one does not exist. 
+## 📁 Project Structure
 
-## 📁 Project Structure Overview
-* `/Controllers`: Contains the C# classes handling HTTP requests and orchestrating business logic.
-* `/Models`: Defines the core domain entities (e.g., `ApplicationUser`, `Wallet`, `Transaction`) representing the database schema.
-* `/ViewModels`: Specialized models tailored specifically for data transfer between Controllers and Views.
-* `/Views`: Contains all the Razor (`.cshtml`) pages responsible for the application's UI.
-* `/Data`: Houses the `ApplicationDbContext` and Entity Framework migration history.
-* `/wwwroot`: The public-facing directory for static web assets like custom CSS, JavaScript, and images.
+*   `/Controllers`: HTTP request handlers and business logic orchestration.
+*   `/Models`: Core domain entities (Users, Wallets, Transactions, Check-in Logs).
+*   `/Services`: Reusable logic like `MemberQrCodeService`.
+*   `/ViewModels`: Specialized data structures for UI-Controller interaction.
+*   `/Views`: Razor templates for the user interface.
+*   `/Data`: `ApplicationDbContext` and database migrations.
+*   `/wwwroot`: Static assets (CSS, JS, images, uploads).
+
+---
+*Built for gym owners and fitness enthusiasts.*
+
+## 👥 Development Team
+
+*   **Mary Jasmin Pancho** — Project Manager
+*   **Paul Alarba** — Lead Programmer
+*   **John Alfred Lupian** — Programmer
+*   **Althea Kathleen** — Lead UI/UX Designer
+*   **Joemarie Jean Tibur** — UI/UX Designer

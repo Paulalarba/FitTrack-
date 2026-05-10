@@ -1,3 +1,21 @@
+// ============================================================
+// MemberController.cs — Member Dashboard & Features Controller
+// ============================================================
+// Handles all authenticated member-facing pages and actions:
+//
+//   Dashboard       — Overview of membership status, wallet balance, and recent transactions.
+//   QR              — Displays the member's personal QR code for gym check-in.
+//   RegenerateQR    — Issues a new QR token, instantly invalidating the old QR.
+//   Transactions    — Paginated list of the member's membership payment history.
+//   PaymentOptions  — Shows admin-configured payment accounts (GCash, bank QR codes).
+//   TransferFunds   — Peer-to-peer wallet transfer to another member by phone number.
+//   LookupRecipient — AJAX endpoint to resolve a phone number to a member name.
+//   RequestPayment  — Pay for a membership subscription using the wallet balance.
+//
+// [Authorize] at the class level means EVERY action here requires login.
+// Admin users are redirected away from member pages to the admin dashboard.
+// ============================================================
+
 using FitTrack.Data;
 using FitTrack.Models;
 using FitTrack.Services;
@@ -10,15 +28,32 @@ using System.Data;
 
 namespace FitTrack.Controllers;
 
-[Authorize]
+/// <summary>
+/// Controller for all member-facing features of FitTrack.
+/// Accessible only to authenticated users — admins are redirected to their own controller.
+/// </summary>
+[Authorize] // Unauthenticated users are sent to /Account/Login.
 public class MemberController(
     ApplicationDbContext context,
     UserManager<ApplicationUser> userManager,
     MemberQrCodeService qrCodeService,
     ILogger<MemberController> logger) : Controller
 {
+    // Number of transaction rows to display per page in the Transactions view.
     private const int PageSize = 8;
 
+    // ── Dashboard ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /Member/Dashboard
+    /// Loads and displays the member's personal dashboard:
+    ///   - Their active/latest membership status and plan name.
+    ///   - Their current wallet balance.
+    ///   - The 5 most recent unified transactions (membership, deposits, transfers).
+    ///
+    /// Admins who navigate here directly are redirected to Admin/Dashboard
+    /// because member views are not designed for admin use.
+    /// </summary>
     public async Task<IActionResult> Dashboard()
     {
         var user = await userManager.GetUserAsync(User);
@@ -27,10 +62,58 @@ public class MemberController(
             return RedirectToAction("Login", "Account");
         }
 
+        // Redirect admins away — they have their own dashboard.
         if (await userManager.IsInRoleAsync(user, "Admin"))
         {
             return RedirectToAction("Dashboard", "Admin");
         }
+
+        // 1. Fetch Membership Transactions
+        var membershipTransactions = await context.Transactions
+            .Where(t => t.UserId == user.Id)
+            .OrderByDescending(t => t.PaymentDate)
+            .Take(5)
+            .Select(t => new MemberTransactionItem
+            {
+                Type = "Membership",
+                Amount = t.Amount,
+                Date = t.PaymentDate,
+                Status = t.Status,
+                Description = t.MembershipPlan,
+                Reference = t.Notes,
+                IsDebit = true
+            })
+            .ToListAsync();
+
+        // 2. Fetch Wallet Transactions
+        var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == user.Id);
+        var walletTransactions = new List<MemberTransactionItem>();
+
+        if (wallet is not null)
+        {
+            walletTransactions = await context.WalletTransactions
+                .Where(t => t.WalletId == wallet.Id && t.PaymentMethod != "Wallet")
+                .OrderByDescending(t => t.CreatedAt)
+                .Take(5)
+                .Select(t => new MemberTransactionItem
+                {
+                    Type = t.PaymentMethod == "Wallet Transfer" ? "Transfer" : "Deposit",
+                    Amount = t.Amount,
+                    Date = t.CreatedAt,
+                    Status = t.Status,
+                    Description = t.Type == "Credit" ? "Funds Added" : "Funds Transferred",
+                    Reference = t.ReferenceNumber,
+                    IsDebit = t.Type == "Debit"
+                })
+                .ToListAsync();
+        }
+
+        // 3. Merge, Sort and Take Top 5
+        var recentTransactions = membershipTransactions
+            .Concat(walletTransactions)
+            .OrderByDescending(t => t.Date)
+            .Take(5)
+            .ToList();
 
         var model = new MemberDashboardViewModel
         {
@@ -43,16 +126,28 @@ public class MemberController(
                 .Where(w => w.UserId == user.Id)
                 .Select(w => (decimal?)w.Balance)
                 .FirstOrDefaultAsync() ?? 0M,
-            RecentTransactions = await context.Transactions
-                .Where(t => t.UserId == user.Id)
-                .OrderByDescending(t => t.PaymentDate)
-                .Take(5)
-                .ToListAsync()
+            RecentTransactions = recentTransactions
         };
 
         return View(model);
     }
 
+    // ── QR Code ───────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /Member/QR
+    /// Renders the member's personal QR code page.
+    ///
+    /// The QR code payload is a tamper-proof encrypted string generated by
+    /// MemberQrCodeService.CreateProtectedPayload(). The Razor view renders it
+    /// as a visual QR image using a JS library.
+    ///
+    /// Also displays:
+    ///   - The member's current membership status.
+    ///   - The date and result of their last gym scan.
+    ///
+    /// EnsureQrCodeTokenAsync() is called to backfill tokens for legacy accounts.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> QR()
     {
@@ -67,6 +162,7 @@ public class MemberController(
             return RedirectToAction("Dashboard", "Admin");
         }
 
+        // Make sure the user has a QR token (generates one if missing).
         await EnsureQrCodeTokenAsync(user);
 
         return View(new MemberQrViewModel
@@ -74,11 +170,13 @@ public class MemberController(
             FullName = user.FullName,
             Email = user.Email,
             ProfilePicture = user.ProfilePicture,
+            // Encrypted payload that the admin's scanner will decode and verify.
             QrPayload = qrCodeService.CreateProtectedPayload(user),
             CurrentMembership = await context.Memberships
                 .Where(m => m.UserId == user.Id)
                 .OrderByDescending(m => m.EndDate)
                 .FirstOrDefaultAsync(),
+            // Show the most recent check-in event so the member knows when they last scanned.
             LastCheckIn = await context.CheckInLogs
                 .Where(c => c.MemberId == user.Id)
                 .OrderByDescending(c => c.CheckInTime)
@@ -86,6 +184,14 @@ public class MemberController(
         });
     }
 
+    /// <summary>
+    /// POST /Member/RegenerateQR
+    /// Issues a brand-new QrCodeToken to the member, instantly invalidating
+    /// any previously generated QR code images (screenshots, printouts, etc.).
+    ///
+    /// Use case: a member suspects someone else has a copy of their QR code.
+    /// After regeneration, only the new QR code will pass the token check in AdminController.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RegenerateQR()
@@ -101,6 +207,7 @@ public class MemberController(
             return RedirectToAction("Dashboard", "Admin");
         }
 
+        // Generate a new random token — the old one is overwritten and can no longer be used.
         user.QrCodeToken = MemberQrCodeService.GenerateToken();
         var result = await userManager.UpdateAsync(user);
         TempData["StatusMessage"] = result.Succeeded
@@ -110,6 +217,18 @@ public class MemberController(
         return RedirectToAction(nameof(QR));
     }
 
+    // ── Transactions ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /Member/Transactions?page=N
+    /// Displays a paginated, unified list of the current member's transaction history.
+    /// This includes:
+    ///   - Membership payments (from Transactions table)
+    ///   - Wallet deposits and transfers (from WalletTransactions table)
+    ///
+    /// To avoid duplication, WalletTransactions with PaymentMethod "Wallet" are excluded
+    /// because they are already represented by a record in the Transactions table.
+    /// </summary>
     public async Task<IActionResult> Transactions(int page = 1)
     {
         var user = await userManager.GetUserAsync(User);
@@ -118,22 +237,72 @@ public class MemberController(
             return RedirectToAction("Login", "Account");
         }
 
-        var query = context.Transactions.Where(t => t.UserId == user.Id);
-        var totalCount = await query.CountAsync();
-        var transactions = await query
-            .OrderByDescending(t => t.PaymentDate)
+        // 1. Fetch Membership Transactions
+        var membershipTransactions = await context.Transactions
+            .Where(t => t.UserId == user.Id)
+            .Select(t => new MemberTransactionItem
+            {
+                Type = "Membership",
+                Amount = t.Amount,
+                Date = t.PaymentDate,
+                Status = t.Status,
+                Description = t.MembershipPlan,
+                Reference = t.Notes,
+                IsDebit = true
+            })
+            .ToListAsync();
+
+        // 2. Fetch Wallet Transactions (excluding internal wallet-based membership payments)
+        var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == user.Id);
+        var walletTransactions = new List<MemberTransactionItem>();
+
+        if (wallet is not null)
+        {
+            walletTransactions = await context.WalletTransactions
+                .Where(t => t.WalletId == wallet.Id && t.PaymentMethod != "Wallet")
+                .Select(t => new MemberTransactionItem
+                {
+                    Type = t.PaymentMethod == "Wallet Transfer" ? "Transfer" : "Deposit",
+                    Amount = t.Amount,
+                    Date = t.CreatedAt,
+                    Status = t.Status,
+                    Description = t.Type == "Credit" ? "Funds Added" : "Funds Transferred",
+                    Reference = t.ReferenceNumber,
+                    IsDebit = t.Type == "Debit"
+                })
+                .ToListAsync();
+        }
+
+        // 3. Merge and Sort
+        var allTransactions = membershipTransactions
+            .Concat(walletTransactions)
+            .OrderByDescending(t => t.Date)
+            .ToList();
+
+        var totalCount = allTransactions.Count;
+
+        // 4. Paginate the merged list
+        var pagedTransactions = allTransactions
             .Skip((page - 1) * PageSize)
             .Take(PageSize)
-            .ToListAsync();
+            .ToList();
 
         return View(new MemberTransactionsViewModel
         {
-            Transactions = transactions,
+            Transactions = pagedTransactions,
             Page = page,
             TotalPages = (int)Math.Ceiling(totalCount / (double)PageSize)
         });
     }
 
+    // ── Payment Options ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /Member/PaymentOptions
+    /// Shows the list of admin-configured payment accounts (GCash, bank QR codes).
+    /// Members use this page to know where to send money before submitting
+    /// a deposit request via Wallet/Deposit.
+    /// </summary>
     public async Task<IActionResult> PaymentOptions()
     {
         var user = await userManager.GetUserAsync(User);
@@ -142,6 +311,7 @@ public class MemberController(
             return RedirectToAction("Login", "Account");
         }
 
+        // Order by type then name for a consistent, readable display.
         var accounts = await context.PaymentAccounts
             .OrderBy(p => p.PaymentType)
             .ThenBy(p => p.AccountName)
@@ -150,6 +320,12 @@ public class MemberController(
         return View(accounts);
     }
 
+    // ── Transfer Funds ────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /Member/TransferFunds
+    /// Renders the peer-to-peer transfer form pre-populated with the sender's wallet balance.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> TransferFunds()
     {
@@ -165,6 +341,26 @@ public class MemberController(
         });
     }
 
+    /// <summary>
+    /// POST /Member/TransferFunds
+    /// Executes a wallet-to-wallet transfer between two members.
+    ///
+    /// Security and correctness:
+    ///   - Uses IsolationLevel.Serializable to prevent double-spend races
+    ///     (two simultaneous transfers from the same wallet).
+    ///   - Validates that the recipient exists and is not the sender.
+    ///   - Checks the sender has sufficient balance before debiting.
+    ///   - Rolls back the DB transaction if validation fails after the
+    ///     database transaction has started.
+    ///   - Logs the transfer details for auditing (no sensitive data logged).
+    ///
+    /// Two WalletTransaction rows are written:
+    ///   - A "Debit" row for the sender (money out).
+    ///   - A "Credit" row for the recipient (money in), auto-approved.
+    ///
+    /// Phone number normalisation (digits only) handles formatting variations
+    /// like "0917-123-4567" vs "09171234567".
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> TransferFunds(TransferFundsViewModel model)
@@ -175,9 +371,11 @@ public class MemberController(
             return RedirectToAction("Login", "Account");
         }
 
+        // Pre-load wallet balance for the form in case we return with errors.
         model.WalletBalance = await GetWalletBalanceAsync(sender.Id);
         var recipient = await FindUserByPhoneAsync(model.RecipientPhoneNumber);
 
+        // Validate recipient exists and is not the sender.
         if (recipient is null)
         {
             ModelState.AddModelError(nameof(model.RecipientPhoneNumber), "No member account was found with that phone number.");
@@ -192,33 +390,41 @@ public class MemberController(
             return View(model);
         }
 
+        // ── Serializable Transaction ──────────────────────────────────────────
+        // Serializable isolation prevents two concurrent requests from both
+        // reading the same balance and both thinking they have enough funds.
         await using var dbTransaction = await context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
 
+        // Get or create wallets for both parties inside the DB transaction.
         var senderWallet = await GetOrCreateWalletAsync(sender.Id);
         var recipientWallet = await GetOrCreateWalletAsync(recipient!.Id);
 
+        // Check sender has enough balance to cover the transfer amount.
         if (senderWallet.Balance < model.Amount)
         {
             ModelState.AddModelError(nameof(model.Amount), $"Insufficient wallet balance. Current balance: {senderWallet.Balance:C}.");
             model.WalletBalance = senderWallet.Balance;
-            await dbTransaction.RollbackAsync();
+            await dbTransaction.RollbackAsync(); // Cancel the DB transaction.
             return View(model);
         }
 
+        // Debit the sender and credit the recipient atomically.
         senderWallet.Balance -= model.Amount;
         recipientWallet.Balance += model.Amount;
 
         var now = DateTime.UtcNow;
+        // Build human-readable reference strings for each party's transaction history.
         var senderReference = BuildTransferReference("To", recipient.FullName, recipient.PhoneNumber, model.Note);
         var recipientReference = BuildTransferReference("From", sender.FullName, sender.PhoneNumber, model.Note);
 
+        // Write two WalletTransaction rows in a single SaveChanges call.
         context.WalletTransactions.AddRange(
             new WalletTransaction
             {
                 WalletId = senderWallet.Id,
                 Amount = model.Amount,
-                Type = "Debit",
-                Status = "Approved",
+                Type = "Debit",          // Sender loses money.
+                Status = "Approved",     // Instant — no admin approval needed for transfers.
                 PaymentMethod = "Wallet Transfer",
                 ReferenceNumber = senderReference,
                 CreatedAt = now
@@ -227,16 +433,18 @@ public class MemberController(
             {
                 WalletId = recipientWallet.Id,
                 Amount = model.Amount,
-                Type = "Credit",
-                Status = "Approved",
+                Type = "Credit",         // Recipient gains money.
+                Status = "Approved",     // Instant credit.
                 PaymentMethod = "Wallet Transfer",
                 ReferenceNumber = recipientReference,
                 CreatedAt = now
             });
 
         await context.SaveChangesAsync();
-        await dbTransaction.CommitAsync();
+        await dbTransaction.CommitAsync(); // All changes committed atomically.
 
+        // Structured logging for audit purposes. User IDs (not names) are logged
+        // to maintain consistency with Identity's logging conventions.
         logger.LogInformation(
             "Wallet transfer completed. SenderUserId={SenderUserId}, RecipientUserId={RecipientUserId}, Amount={Amount}",
             sender.Id,
@@ -247,6 +455,17 @@ public class MemberController(
         return RedirectToAction("Index", "Wallet");
     }
 
+    // ── Lookup Recipient (AJAX) ───────────────────────────────────────────────
+
+    /// <summary>
+    /// GET /Member/LookupRecipient?phoneNumber=XXXXX
+    /// AJAX endpoint called from the TransferFunds form as the user types a phone number.
+    /// Returns JSON indicating whether a member with that phone number was found,
+    /// and if so, their full name (for confirmation display).
+    ///
+    /// Also flags if the phone number belongs to the current user themselves
+    /// so the front-end can show an inline warning before form submission.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> LookupRecipient(string phoneNumber)
     {
@@ -265,14 +484,36 @@ public class MemberController(
         return Json(new
         {
             found = true,
-            isSelf = recipient.Id == currentUser.Id,
+            isSelf = recipient.Id == currentUser.Id, // Front-end uses this to warn "can't send to yourself".
             fullName = recipient.FullName
         });
     }
 
+    // ── Request Payment (Membership via Wallet) ───────────────────────────────
+
+    /// <summary>
+    /// GET /Member/RequestPayment
+    /// Renders the membership purchase form.
+    /// Pre-selects "Classic Membership" at ₱850 as the default plan.
+    /// </summary>
     [HttpGet]
     public IActionResult RequestPayment() => View(new TransactionRequestViewModel { Amount = 850M, MembershipPlan = "Classic Membership" });
 
+    /// <summary>
+    /// POST /Member/RequestPayment
+    /// Deducts the membership fee from the member's wallet and activates their membership immediately.
+    ///
+    /// Unlike manual payment (GCash/bank), wallet payments skip the admin approval step:
+    ///   - The wallet is debited here.
+    ///   - A WalletTransaction (Debit, Approved) is recorded.
+    ///   - A Transaction (Approved) is created for the payment history.
+    ///   - The Membership record is created or updated to "Active" for 1 month.
+    ///
+    /// Server-side plan validation:
+    ///   - "Classic Membership"       must be exactly ₱850.
+    ///   - "PF Black Card Membership" must be exactly ₱1,500.
+    ///   This prevents a malicious user from manipulating the form to pay a different amount.
+    /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RequestPayment(TransactionRequestViewModel model)
@@ -283,6 +524,9 @@ public class MemberController(
             return RedirectToAction("Login", "Account");
         }
 
+        // ── Plan-Price Server Validation ──────────────────────────────────────
+        // Validate that the submitted amount exactly matches the plan's fixed price.
+        // This cannot be bypassed by editing the HTML form — the check is done server-side.
         if (model.MembershipPlan == "Classic Membership" && model.Amount != 850M)
         {
             ModelState.AddModelError("Amount", "Invalid amount for Classic Membership. The price is ₱850.");
@@ -301,6 +545,8 @@ public class MemberController(
             return View(model);
         }
 
+        // ── Balance Check ─────────────────────────────────────────────────────
+        // Reject the request if the wallet doesn't have enough balance.
         var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == user.Id);
         if (wallet is null || wallet.Balance < model.Amount)
         {
@@ -309,32 +555,40 @@ public class MemberController(
             return View(model);
         }
 
+        // ── Deduct from Wallet ────────────────────────────────────────────────
         wallet.Balance -= model.Amount;
+
+        // Record the debit in wallet transaction history.
         context.WalletTransactions.Add(new WalletTransaction
         {
             WalletId = wallet.Id,
             Amount = model.Amount,
             Type = "Debit",
-            Status = "Approved",
+            Status = "Approved",   // Instant — no approval needed for wallet payments.
             PaymentMethod = "Wallet",
             ReferenceNumber = $"Membership payment - {model.MembershipPlan}",
             CreatedAt = DateTime.UtcNow
         });
 
+        // Record the membership payment transaction (visible in Member > Transactions).
         var transaction = new Transaction
         {
             UserId = user.Id,
             Amount = model.Amount,
             MembershipPlan = model.MembershipPlan,
             Notes = model.Notes,
-            Status = "Approved",
+            Status = "Approved",   // Instant approval for wallet payments.
             PaymentDate = DateTime.UtcNow
         };
 
         context.Transactions.Add(transaction);
 
+        // ── Activate Membership ───────────────────────────────────────────────
+        // All plans are monthly (1 month duration) when paid from the wallet.
         var startDate = DateTime.UtcNow.Date;
         var endDate = startDate.AddMonths(1);
+
+        // Check if the user already has a membership record.
         var membership = await context.Memberships
             .Where(m => m.UserId == user.Id)
             .OrderByDescending(m => m.EndDate)
@@ -342,6 +596,7 @@ public class MemberController(
 
         if (membership is null)
         {
+            // First-time member — create a new Membership record.
             context.Memberships.Add(new Membership
             {
                 UserId = user.Id,
@@ -354,6 +609,7 @@ public class MemberController(
         }
         else
         {
+            // Existing member — update their current record to the new plan/period.
             membership.PlanName = model.MembershipPlan;
             membership.MonthlyFee = model.Amount;
             membership.StartDate = startDate;
@@ -361,11 +617,18 @@ public class MemberController(
             membership.Status = "Active";
         }
 
+        // Persist all changes (wallet debit, wallet transaction, membership payment, membership) in one call.
         await context.SaveChangesAsync();
         TempData["StatusMessage"] = "Membership paid from wallet and activated.";
         return RedirectToAction(nameof(Transactions));
     }
 
+    // ── Private Helpers ───────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the wallet balance for <paramref name="userId"/>, or 0 if no wallet exists.
+    /// Used to pre-populate balance displays in ViewModels without creating a wallet.
+    /// </summary>
     private async Task<decimal> GetWalletBalanceAsync(string userId)
     {
         return await context.Wallets
@@ -374,6 +637,11 @@ public class MemberController(
             .FirstOrDefaultAsync() ?? 0M;
     }
 
+    /// <summary>
+    /// Retrieves the wallet for <paramref name="userId"/> or creates a new zero-balance
+    /// wallet if one doesn't exist. Used during fund transfers to ensure both parties
+    /// have a wallet row before attempting to update balances.
+    /// </summary>
     private async Task<Wallet> GetOrCreateWalletAsync(string userId)
     {
         var wallet = await context.Wallets.FirstOrDefaultAsync(w => w.UserId == userId);
@@ -388,6 +656,15 @@ public class MemberController(
         return wallet;
     }
 
+    /// <summary>
+    /// Finds a member by their phone number using digit-only normalisation.
+    /// This allows "+63 917 123 4567", "0917-123-4567", and "09171234567"
+    /// to all resolve to the same user.
+    ///
+    /// Because EF Core can't translate the custom NormalizePhone() logic to SQL,
+    /// the comparison is done in memory after loading the candidate rows.
+    /// In a large database this should be replaced with a normalised phone column.
+    /// </summary>
     private async Task<ApplicationUser?> FindUserByPhoneAsync(string? phoneNumber)
     {
         var normalizedPhone = NormalizePhone(phoneNumber);
@@ -396,6 +673,7 @@ public class MemberController(
             return null;
         }
 
+        // Load all users who have a phone number (avoid loading those without).
         var users = await context.Users
             .Where(u => u.PhoneNumber != null)
             .ToListAsync();
@@ -403,17 +681,29 @@ public class MemberController(
         return users.FirstOrDefault(u => NormalizePhone(u.PhoneNumber) == normalizedPhone);
     }
 
+    /// <summary>
+    /// Ensures the user has a QR code token, generating one if missing.
+    /// This is a safety net for user accounts created before the QrCodeToken
+    /// column was introduced, or if seeding failed to backfill a token.
+    /// </summary>
     private async Task EnsureQrCodeTokenAsync(ApplicationUser user)
     {
         if (!string.IsNullOrWhiteSpace(user.QrCodeToken))
         {
-            return;
+            return; // Token already exists — nothing to do.
         }
 
         user.QrCodeToken = MemberQrCodeService.GenerateToken();
         await userManager.UpdateAsync(user);
     }
 
+    /// <summary>
+    /// Strips all non-digit characters from a phone number string.
+    /// Examples:
+    ///   "+63 917-123-4567" → "639171234567"
+    ///   "0917 123 4567"    → "09171234567"
+    ///   null               → ""
+    /// </summary>
     private static string NormalizePhone(string? phoneNumber)
     {
         if (string.IsNullOrWhiteSpace(phoneNumber))
@@ -421,9 +711,19 @@ public class MemberController(
             return string.Empty;
         }
 
+        // Keep only digit characters, discard spaces, dashes, plus signs, parentheses.
         return new string(phoneNumber.Where(char.IsDigit).ToArray());
     }
 
+    /// <summary>
+    /// Builds a human-readable reference string for wallet transfer history entries.
+    ///
+    /// Format: "To: Juan Dela Cruz (09171234567) - Optional note here"
+    ///         "From: Maria Santos (09189876543)"
+    ///
+    /// Truncated to 120 characters (the column limit in WalletTransaction) to
+    /// avoid database errors for unusually long names or notes.
+    /// </summary>
     private static string BuildTransferReference(string direction, string fullName, string? phoneNumber, string? note)
     {
         var reference = $"{direction}: {fullName} ({phoneNumber})";
@@ -432,6 +732,7 @@ public class MemberController(
             reference += $" - {note.Trim()}";
         }
 
+        // Truncate if the combined string exceeds the DB column max length.
         return reference.Length <= 120 ? reference : reference[..120];
     }
 }

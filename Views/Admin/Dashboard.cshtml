@@ -11,8 +11,47 @@
             <h1 class="page-title mt-2" style="font-size: 1.8rem;">Dashboard Overview</h1>
             <p class="text-secondary mb-0">A quick snapshot of FitTrack operations.</p>
         </div>
-        
     </div>
+
+    @if (Model.PendingPaymentsCount > 0 || Model.PendingWalletRequestsCount > 0 || Model.NewUsersTodayCount > 0)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-12">
+                <div class="panel-card border border-success-subtle">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="bi bi-bell-fill text-fit-green"></i>
+                        <h2 class="section-title mb-0" style="font-size: 1.1rem;">Action Required</h2>
+                    </div>
+                    <div class="d-flex flex-wrap gap-3">
+                        @if (Model.PendingPaymentsCount > 0)
+                        {
+                            <a asp-action="Transactions" asp-route-statusFilter="Pending" class="notification-chip">
+                                <span class="badge rounded-pill bg-danger">@Model.PendingPaymentsCount</span>
+                                <span>Pending Payments</span>
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        }
+                        @if (Model.PendingWalletRequestsCount > 0)
+                        {
+                            <a asp-action="WalletRequests" class="notification-chip">
+                                <span class="badge rounded-pill bg-danger">@Model.PendingWalletRequestsCount</span>
+                                <span>Wallet Requests</span>
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        }
+                        @if (Model.NewUsersTodayCount > 0)
+                        {
+                            <a asp-action="Users" class="notification-chip chip-info">
+                                <span class="badge rounded-pill bg-info">@Model.NewUsersTodayCount</span>
+                                <span>New Users Today</span>
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <div class="row g-4 mb-4">
         <div class="col-md-4">
@@ -76,6 +115,36 @@
         .quick-action:focus { box-shadow: 0 0 0 4px rgba(150,245,76,0.12); }
         .quick-action .bi { transition: transform .18s ease; }
         .quick-action:hover .bi, .quick-action:focus .bi { transform: translateY(-3px); }
+
+        /* Notification Chips */
+        .notification-chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        .notification-chip:hover {
+            background: rgba(150, 245, 76, 0.1);
+            border-color: #96f54c;
+            color: #96f54c;
+            transform: translateY(-2px);
+        }
+        .notification-chip.chip-info:hover {
+            background: rgba(13, 202, 240, 0.1);
+            border-color: #0dcaf0;
+            color: #0dcaf0;
+        }
+        .notification-chip i {
+            font-size: 1.2rem;
+            opacity: 0.7;
+        }
     </style>
 
     <div class="row g-4">

@@ -16,6 +16,7 @@ using FitTrack.Models;
 using FitTrack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace FitTrack.Data;
 
@@ -44,6 +45,7 @@ public static class SeedData
         var context = services.GetRequiredService<ApplicationDbContext>();
         var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+        var configuration = services.GetRequiredService<IConfiguration>();
 
         // ── Step 1: Apply Pending Migrations ─────────────────────────────────
         // MigrateAsync() creates the database if it doesn't exist, then applies
@@ -65,10 +67,10 @@ public static class SeedData
         }
 
         // ── Step 3: Seed Default Admin Account ───────────────────────────────
-        // These credentials are only used on the very first boot.
-        // IMPORTANT: Change the password after the first login in production.
-        const string adminEmail = "admin@fittrack.local";
-        const string adminPassword = "Admin123!";
+        // These credentials are read from configuration (environment variables or appsettings).
+        // Default values are provided as a fallback.
+        string adminEmail = configuration["ADMIN_EMAIL"] ?? "ADMIN_EMAIL";
+        string adminPassword = configuration["ADMIN_PASSWORD"] ?? "ADMIN_PASSWORD";
 
         var adminUser = await userManager.FindByEmailAsync(adminEmail);
 

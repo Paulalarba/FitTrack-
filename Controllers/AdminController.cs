@@ -194,6 +194,149 @@ public class AdminController(
     }
 
     /// <summary>
+    /// GET /Admin/LookupMember?name=X
+    /// AJAX endpoint called by the ScanQR page name-search fallback.
+    /// Returns up to 10 members whose full name or email contains the query string,
+    /// together with their latest membership snapshot for the result card.
+    /// Requires at least 2 characters to avoid returning the entire user list.
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> LookupMember(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Trim().Length < 2)
+        {
+            return Json(new { results = Array.Empty<object>() });
+        }
+
+        var term = name.Trim();
+
+        var members = await context.Users
+            .Where(u =>
+                u.FullName.Contains(term) ||
+                (u.Email != null && u.Email.Contains(term)))
+            .OrderBy(u => u.FullName)
+            .Take(10)
+            .ToListAsync();
+
+        var results = new List<object>();
+        foreach (var member in members)
+        {
+            var membership = await context.Memberships
+                .Where(m => m.UserId == member.Id)
+                .OrderByDescending(m => m.EndDate)
+                .FirstOrDefaultAsync();
+
+            results.Add(new
+            {
+                id = member.Id,
+                fullName = member.FullName,
+                email = member.Email,
+                profilePicture = member.ProfilePicture,
+                membership = BuildMembershipScanResponse(membership)
+            });
+        }
+
+        return Json(new { results });
+    }
+
+    /// <summary>
+    /// POST /Admin/ManualCheckIn  (JSON body: { memberId: "..." })
+    /// Performs the full check-in flow without requiring a QR code scan.
+    /// This is the fallback path when the camera scanner is unavailable
+    /// or the member cannot present a working QR code.
+    ///
+    /// The logic mirrors VerifyQrCode:
+    ///   1. Look up the member by ID.
+    ///   2. Enforce the 45-second cooldown window.
+    ///   3. Check membership IsActive status.
+    ///   4. Write a CheckInLog row with Reason = "Manual check-in (QR fallback)".
+    ///   5. Return the same JSON shape the front-end already knows how to render.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ManualCheckIn([FromBody] ManualCheckInRequest? request)
+    {
+        var now = DateTime.UtcNow;
+
+        if (request is null || string.IsNullOrWhiteSpace(request.MemberId))
+        {
+            return Json(new
+            {
+                verified = false,
+                allowEntry = false,
+                status = "Denied",
+                message = "Invalid request. No member ID supplied."
+            });
+        }
+
+        var member = await context.Users.FirstOrDefaultAsync(u => u.Id == request.MemberId);
+        if (member is null)
+        {
+            return Json(new
+            {
+                verified = false,
+                allowEntry = false,
+                status = "Denied",
+                message = "Member not found."
+            });
+        }
+
+        // Cooldown guard — same window as QR-based check-in.
+        var lastCheckIn = await context.CheckInLogs
+            .Where(c => c.MemberId == member.Id)
+            .OrderByDescending(c => c.CheckInTime)
+            .FirstOrDefaultAsync();
+
+        if (lastCheckIn is not null && lastCheckIn.CheckInTime >= now.AddSeconds(-ScanCooldownSeconds))
+        {
+            return Json(new
+            {
+                verified = true,
+                allowEntry = lastCheckIn.Status == "Allowed",
+                status = "Duplicate",
+                message = $"Already checked in. Please wait {ScanCooldownSeconds} seconds between check-ins.",
+                member = BuildMemberScanResponse(member),
+                membership = await BuildMembershipScanResponseAsync(member.Id),
+                checkInTime = lastCheckIn.CheckInTime
+            });
+        }
+
+        var membership = await context.Memberships
+            .Where(m => m.UserId == member.Id)
+            .OrderByDescending(m => m.EndDate)
+            .FirstOrDefaultAsync();
+
+        var allowEntry = membership?.IsActive == true;
+        var status = allowEntry ? "Allowed" : "Denied";
+        var reason = allowEntry ? "Manual check-in (QR fallback)" : "Membership expired or inactive";
+
+        var log = new CheckInLog
+        {
+            MemberId = member.Id,
+            CheckInTime = now,
+            Status = status,
+            Reason = reason
+        };
+
+        context.CheckInLogs.Add(log);
+        await context.SaveChangesAsync();
+
+        return Json(new
+        {
+            verified = true,
+            allowEntry,
+            status,
+            message = allowEntry
+                ? $"Welcome, {member.FullName}. (Manual check-in)"
+                : "Membership expired or inactive. Entry denied.",
+            member = BuildMemberScanResponse(member),
+            membership = BuildMembershipScanResponse(membership),
+            checkInTime = log.CheckInTime,
+            previousCheckInTime = lastCheckIn?.CheckInTime
+        });
+    }
+
+    /// <summary>
     /// GET /Admin/Users?searchTerm=X&amp;page=N
     /// Paginated, searchable list of ALL registered users.
     /// Search matches against full name, email address, or user ID.

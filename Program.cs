@@ -11,10 +11,18 @@ using FitTrack.Models;
 using FitTrack.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 // Create the WebApplication builder — this sets up configuration sources
 // (appsettings.json, environment variables, etc.) and prepares the DI container.
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Culture Configuration ─────────────────────────────────────────────────────
+// Set the default culture to en-PH (Philippines) to ensure currency formatting
+// uses the Philippine Peso symbol (₱) globally throughout the application.
+var cultureInfo = new CultureInfo("en-PH");
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 // ── Database ──────────────────────────────────────────────────────────────────
 // Register ApplicationDbContext (our EF Core database context) and point it

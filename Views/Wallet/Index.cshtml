@@ -26,13 +26,13 @@
         <div class="col-md-6">
             <div class="panel-card stat-card stat-card-green">
                 <span class="stat-label">Available Balance</span>
-                <strong class="stat-value">@Model.Balance.ToString("C")</strong>
+                <strong class="stat-value">@Model.Balance.ToString("₱#,##0.00")</strong>
             </div>
         </div>
         <div class="col-md-6">
             <div class="panel-card stat-card stat-card-teal">
                 <span class="stat-label">Approved Deposits</span>
-                <strong class="stat-value">@Model.TotalDeposits.ToString("C")</strong>
+                <strong class="stat-value">@Model.TotalDeposits.ToString("₱#,##0.00")</strong>
             </div>
         </div>
     </div>
@@ -71,7 +71,7 @@
 
                             <tr>
                                 <td>@transaction.Type</td>
-                                <td>@transaction.Amount.ToString("C")</td>
+                                <td>@transaction.Amount.ToString("₱#,##0.00")</td>
                                 <td>@transaction.PaymentMethod</td>
                                 <td>@(string.IsNullOrWhiteSpace(transaction.ReferenceNumber) ? "-" : transaction.ReferenceNumber)</td>
                                 <td>@transaction.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</td>

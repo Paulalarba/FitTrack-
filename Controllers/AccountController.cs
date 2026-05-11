@@ -14,6 +14,7 @@
 //
 //   Logout   — Signs the user out and clears the authentication cookie.
 //
+
 // The controller itself has no [Authorize] attribute, so anonymous access
 // is allowed by default for Login and SignUp. The [Authorize] attribute
 // is applied per-action where login is required (Profile, Logout).

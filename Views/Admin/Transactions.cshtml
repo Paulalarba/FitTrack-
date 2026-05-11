@@ -58,7 +58,7 @@
                             <td>#@transaction.Id</td>
                             <td>@transaction.User?.FullName</td>
                             <td>@transaction.MembershipPlan</td>
-                            <td>@transaction.Amount.ToString("C")</td>
+                            <td>@transaction.Amount.ToString("₱#,##0.00")</td>
                             <td>@transaction.PaymentDate.ToLocalTime().ToString("MMM dd, yyyy")</td>
                             <td>
                                 @{

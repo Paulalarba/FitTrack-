@@ -402,7 +402,7 @@ public class MemberController(
         // Check sender has enough balance to cover the transfer amount.
         if (senderWallet.Balance < model.Amount)
         {
-            ModelState.AddModelError(nameof(model.Amount), $"Insufficient wallet balance. Current balance: {senderWallet.Balance:C}.");
+            ModelState.AddModelError(nameof(model.Amount), $"Insufficient wallet balance. Current balance: ₱{senderWallet.Balance:#,##0.00}.");
             model.WalletBalance = senderWallet.Balance;
             await dbTransaction.RollbackAsync(); // Cancel the DB transaction.
             return View(model);
@@ -451,7 +451,7 @@ public class MemberController(
             recipient.Id,
             model.Amount);
 
-        TempData["StatusMessage"] = $"Transfer of {model.Amount:C} to {recipient.FullName} completed.";
+        TempData["StatusMessage"] = $"Transfer of ₱{model.Amount:#,##0.00} to {recipient.FullName} completed.";
         return RedirectToAction("Index", "Wallet");
     }
 
@@ -551,7 +551,7 @@ public class MemberController(
         if (wallet is null || wallet.Balance < model.Amount)
         {
             var balance = wallet?.Balance ?? 0M;
-            ModelState.AddModelError(string.Empty, $"Insufficient wallet balance. Current balance: {balance:C}.");
+            ModelState.AddModelError(string.Empty, $"Insufficient wallet balance. Current balance: ₱{balance:#,##0.00}.");
             return View(model);
         }
 

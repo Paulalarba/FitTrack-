@@ -47,7 +47,7 @@
                             <tr>
                                 <td>#@request.Id</td>
                                 <td>@request.Wallet?.User?.FullName</td>
-                                <td>@request.Amount.ToString("C")</td>
+                                <td>@request.Amount.ToString("₱#,##0.00")</td>
                                 <td>@request.PaymentMethod</td>
                                 <td>@(string.IsNullOrWhiteSpace(request.ReferenceNumber) ? "-" : request.ReferenceNumber)</td>
                                 <td>

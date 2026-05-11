@@ -61,7 +61,7 @@
         <div class="col-md-3">
             <div class="panel-card stat-card stat-card-amber">
                 <span class="stat-label">Wallet Balance</span>
-                <strong class="stat-value">@Model.WalletBalance.ToString("C")</strong>
+                <strong class="stat-value">@Model.WalletBalance.ToString("₱#,##0.00")</strong>
             </div>
         </div>
     </div>
@@ -173,7 +173,7 @@
                                         <td>@transaction.Description</td>
                                         <td>
                                             <span class="@(transaction.IsDebit ? "text-danger" : "text-success")">
-                                                @(transaction.IsDebit ? "-" : "+")@transaction.Amount.ToString("C")
+                                                @(transaction.IsDebit ? "-" : "+")@transaction.Amount.ToString("₱#,##0.00")
                                             </span>
                                         </td>
                                         <td><span class="badge badge-fit">@transaction.Status</span></td>

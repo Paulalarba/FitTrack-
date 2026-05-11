@@ -11,7 +11,7 @@
         <p class="text-secondary">Send approved wallet funds to another member using their registered phone number.</p>
 
         <div class="wallet-balance alert alert-dark border border-success-subtle text-white">
-            Available balance: <strong class="text-fit-green">@Model.WalletBalance.ToString("C")</strong>
+            Available balance: <strong class="text-fit-green">@Model.WalletBalance.ToString("₱#,##0.00")</strong>
         </div>
 
         <form asp-action="TransferFunds" method="post" class="row g-4 mt-1" id="transferFundsForm">

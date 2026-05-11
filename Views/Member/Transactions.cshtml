@@ -62,7 +62,7 @@
                                 <td>@transaction.Description</td>
                                 <td>
                                     <span class="@(transaction.IsDebit ? "text-danger" : "text-success")">
-                                        @(transaction.IsDebit ? "-" : "+")@transaction.Amount.ToString("C")
+                                        @(transaction.IsDebit ? "-" : "+")@transaction.Amount.ToString("₱#,##0.00")
                                     </span>
                                 </td>
                                 <td>@transaction.Date.ToLocalTime().ToString("MMM dd, yyyy")</td>
